@@ -3,7 +3,7 @@
   import { useI18n } from 'vue-i18n'
   import { useRoute, useRouter } from 'vue-router'
   import { ssoApi } from '@/api/auth'
-  import logoProenergi from '@/assets/logo-proenergi.png'
+  import tmsLogo from '@/assets/tms-icon.png'
   import { useAuthStore } from '@/stores/auth'
 
   // Halaman transisi SSO dari SYOP — dituju lewat link berisi ?token=...
@@ -45,7 +45,7 @@
 
 <template>
   <div class="sso-loading-screen d-flex flex-column align-center justify-center">
-    <img alt="Pro Energi" class="sso-logo mb-6" :src="logoProenergi">
+    <img alt="TMS" class="sso-logo mb-6" :src="tmsLogo">
     <v-progress-circular v-if="!hasError" color="primary" indeterminate size="40" />
     <p class="text-body-2 text-medium-emphasis mt-4">{{ statusText }}</p>
   </div>
@@ -57,6 +57,6 @@
 }
 
 .sso-logo {
-  height: 48px;
+  height: 72px;
 }
 </style>

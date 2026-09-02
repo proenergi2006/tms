@@ -2,6 +2,7 @@
   import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useRouter } from 'vue-router'
+  import tmsIcon from '@/assets/tms-icon.png'
   import AppFooter from '@/components/AppFooter.vue'
   import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
   import NotificationMenu from '@/components/NotificationMenu.vue'
@@ -116,7 +117,14 @@
 <template>
   <v-app>
     <v-navigation-drawer v-model="drawer">
-      <v-list-item :subtitle="t('nav.appSubtitle')" :title="t('nav.appTitle')" />
+      <v-list-item :subtitle="t('nav.appSubtitle')" :title="t('nav.appTitle')">
+        <template #prepend>
+          <v-avatar rounded="0" size="36">
+            <v-img alt="TMS" :src="tmsIcon" />
+          </v-avatar>
+        </template>
+      </v-list-item>
+
       <v-divider />
 
       <v-list color="primary" density="compact" nav>

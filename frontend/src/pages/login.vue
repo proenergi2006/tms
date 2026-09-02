@@ -3,7 +3,7 @@
   import { useI18n } from 'vue-i18n'
   import { useRoute, useRouter } from 'vue-router'
   import { authApi, devAuthApi } from '@/api/auth'
-  import logoProenergi from '@/assets/logo-proenergi.png'
+  import tmsLogo from '@/assets/tms-icon.png'
   import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
   import { useAuthStore } from '@/stores/auth'
 
@@ -105,7 +105,7 @@
 
               <v-card-text class="pa-8">
                 <div class="d-flex justify-center mb-6">
-                  <img alt="Pro Energi" class="login-logo" :src="logoProenergi">
+                  <img alt="TMS" class="login-logo" :src="tmsLogo">
                 </div>
 
                 <h2 class="text-h5 font-weight-bold mb-1">{{ t('login.title') }}</h2>
@@ -212,7 +212,7 @@
 }
 
 .login-logo {
-  height: 48px;
+  height: 72px;
 }
 
 .login-form-panel {
