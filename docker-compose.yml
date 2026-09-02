@@ -1,0 +1,68 @@
+# Deployment production TMS. Sesuai Architecture Document Bagian 8.1: TMS
+# berbagi instance MySQL yang sama dengan SYOP native, jadi TIDAK ADA service
+# mysql di sini — app & scheduler konek ke MySQL yang sudah jalan di host
+# lewat host.docker.internal (lihat extra_hosts di bawah).
+#
+# Sebelum "docker compose up -d --build":
+#   cp backend/.env.docker.example backend/.env   # lalu isi semua <ISI>
+#
+services:
+  app:
+    build:
+      context: ./backend
+    image: tms-backend:latest
+    restart: unless-stopped
+    command: ["app"]
+    env_file:
+      - ./backend/.env
+    volumes:
+      - backend_storage:/var/www/html/storage/app
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - tms
+
+  scheduler:
+    image: tms-backend:latest
+    restart: unless-stopped
+    command: ["scheduler"]
+    env_file:
+      - ./backend/.env
+    volumes:
+      - backend_storage:/var/www/html/storage/app
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - app
+    networks:
+      - tms
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: /api/v1
+    image: tms-frontend:latest
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      - app
+    networks:
+      - tms
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/up"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+networks:
+  tms:
+    driver: bridge
+
+volumes:
+  # Attachment yang diupload pengguna (lampiran request/WO, foto) — harus
+  # persisten lintas rebuild image, beda dari kode aplikasi yang di-COPY
+  # saat build.
+  backend_storage:
