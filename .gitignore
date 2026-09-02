@@ -1,1 +1,5 @@
 .DS_Store
+
+# Nilai NFS_ADDR/NFS_PATH (docker-compose.yml) — IP & path internal server,
+# repo ini public, jangan sampai kepublish. Isi lewat .env.example.
+.env

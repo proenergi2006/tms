@@ -5,31 +5,55 @@
 #
 # Sebelum "docker compose up -d --build":
 #   cp backend/.env.docker.example backend/.env   # lalu isi semua <ISI>
+#   cp .env.example .env                          # lalu isi NFS_ADDR/NFS_PATH/WEB_PORT
 #
+volumes:
+  # Storage NFS shared (attachment upload dsb.) — persisten lintas rebuild
+  # image DAN lintas host kalau container dipindah node. IP/path diambil dari
+  # .env di root (bukan hardcode di sini) karena repo ini public.
+  tms_storage_nfs:
+    driver: local
+    driver_opts:
+      type: "nfs"
+      o: "addr=${NFS_ADDR},nfsvers=4.1,rw,hard,timeo=600"
+      device: ":${NFS_PATH}"
+
 services:
   app:
+    container_name: tms-backend
     build:
       context: ./backend
+      dockerfile: Dockerfile
     image: tms-backend:latest
     restart: unless-stopped
     command: ["app"]
     env_file:
       - ./backend/.env
     volumes:
-      - backend_storage:/var/www/html/storage/app
+      # SENGAJA TIDAK ada bind-mount "./backend:/var/www/html" di sini — itu
+      # menimpa vendor/ hasil build image dengan folder host yang tidak
+      # punya vendor/ sama sekali (vendor/ di-gitignore), menyebabkan error
+      # "vendor/autoload.php not found". Kode aplikasi sudah "dibekukan" di
+      # dalam image lewat COPY saat build — ganti kode = rebuild image, bukan
+      # edit langsung folder host.
+      - tms_storage_nfs:/var/www/html/storage/app
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
       - tms
 
   scheduler:
+    container_name: tms-scheduler
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     image: tms-backend:latest
     restart: unless-stopped
     command: ["scheduler"]
     env_file:
       - ./backend/.env
     volumes:
-      - backend_storage:/var/www/html/storage/app
+      - tms_storage_nfs:/var/www/html/storage/app
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
@@ -38,14 +62,16 @@ services:
       - tms
 
   web:
+    container_name: tms-frontend
     build:
       context: ./frontend
+      dockerfile: Dockerfile
       args:
         VITE_API_BASE_URL: /api/v1
     image: tms-frontend:latest
     restart: unless-stopped
     ports:
-      - "8080:80"
+      - "${WEB_PORT}:80"
     depends_on:
       - app
     networks:
@@ -60,9 +86,3 @@ services:
 networks:
   tms:
     driver: bridge
-
-volumes:
-  # Attachment yang diupload pengguna (lampiran request/WO, foto) — harus
-  # persisten lintas rebuild image, beda dari kode aplikasi yang di-COPY
-  # saat build.
-  backend_storage:
