@@ -16,7 +16,6 @@ use App\Modules\MasterData\Http\Controllers\WarehouseController;
 use Illuminate\Support\Facades\Route;
 
 $resources = [
-    'branches' => BranchController::class,
     'fleets' => FleetController::class,
     'drivers' => DriverController::class,
     'mechanics' => MechanicController::class,
@@ -29,6 +28,12 @@ foreach ($resources as $uri => $controller) {
     Route::apiResource($uri, $controller)->only(['index', 'show'])->middleware('permission:master-data.view');
     Route::apiResource($uri, $controller)->only(['store', 'update', 'destroy'])->middleware('permission:master-data.manage');
 }
+
+// Cabang dipisah dari loop di atas — baca tetap master-data.view (siapa pun
+// yang biasa lihat master data lain), tapi tulis (create/edit/hapus) hanya
+// branch.manage (Admin Sistem saja), lihat RolePermissionSeeder.
+Route::apiResource('branches', BranchController::class)->only(['index', 'show'])->middleware('permission:master-data.view');
+Route::apiResource('branches', BranchController::class)->only(['store', 'update', 'destroy'])->middleware('permission:branch.manage');
 
 Route::post('drivers/sync-syop', [DriverController::class, 'syncFromSyop'])->middleware('permission:master-data.manage');
 Route::post('fleets/sync-syop', [FleetController::class, 'syncFromSyop'])->middleware('permission:master-data.manage');

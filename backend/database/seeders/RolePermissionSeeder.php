@@ -26,6 +26,14 @@ class RolePermissionSeeder extends Seeder
         'master-data.view' => ['sa', 'fleet_operations', 'kepala_pool', 'tim_logistik', 'logistik_ho', 'admin_it_ga', 'manajemen'],
         'master-data.manage' => ['fleet_operations', 'tim_logistik'],
 
+        // Cabang (branches) sengaja DIPISAH dari master-data.manage — ini
+        // struktur organisasi (7 cabang PT Pro Energi), bukan data
+        // operasional harian seperti driver/vendor/sparepart, jadi hanya
+        // Admin Sistem yang boleh CRUD. Role lain (SA, Kepala Pool, Fleet
+        // Operations, Tim Logistik, dst) tetap bisa lihat lewat
+        // master-data.view yang sudah ada — cuma tidak bisa ubah/hapus.
+        'branch.manage' => [],
+
         // Pengajuan & Work Order — SA membuat pengajuan SEKALIGUS Work Order
         // dalam satu langkah (diagnosis, prioritas, estimasi biaya, pelaksana
         // internal/eksternal, No. TAR langsung terisi di awal untuk
