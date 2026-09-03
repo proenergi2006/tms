@@ -114,7 +114,15 @@ class SsoController extends Controller
 
         $raw = base64_decode($normalized, true);
 
-        if ($raw === false || strlen($raw) <= self::IV_LENGTH + self::TAG_LENGTH) {
+        if ($raw === false) {
+            Log::warning('SSO decrypt gagal: base64 tidak valid setelah normalisasi base64url.');
+
+            return null;
+        }
+
+        if (strlen($raw) <= self::IV_LENGTH + self::TAG_LENGTH) {
+            Log::warning("SSO decrypt gagal: hasil base64-decode cuma ".strlen($raw)." byte, minimal harus lebih dari ".(self::IV_LENGTH + self::TAG_LENGTH)." byte (IV 12 + tag 16).");
+
             return null;
         }
 
@@ -122,7 +130,7 @@ class SsoController extends Controller
         $aad = (string) config('services.syop_sso.aad');
 
         if (! $key || strlen($key) !== 32) {
-            Log::error('SSO: SYOP_SSO_KEY belum dikonfigurasi atau bukan 32 byte setelah base64-decode.');
+            Log::error('SSO decrypt gagal: SYOP_SSO_KEY belum dikonfigurasi atau bukan 32 byte setelah base64-decode. Panjang key saat ini: '.($key ? strlen($key) : 0).' byte.');
 
             return null;
         }
@@ -142,11 +150,25 @@ class SsoController extends Controller
         );
 
         if ($plaintext === false) {
+            // Auth tag GCM tidak cocok — kemungkinan besar asumsi urutan
+            // byte (IV di depan, tag di belakang) atau AAD-nya beda dari
+            // implementasi SYOP asli, BUKAN cuma key salah (kalau key yang
+            // salah, error OpenSSL biasanya sama persis: tag verification
+            // failed, tidak bisa dibedakan dari sini). Panjang ciphertext
+            // dilog untuk bantu tim SYOP cocokkan spek format mereka.
+            Log::warning('SSO decrypt gagal: openssl_decrypt AES-256-GCM gagal (auth tag tidak cocok). Panjang raw='.strlen($raw)." byte, asumsi IV=".self::IV_LENGTH.' byte di depan + tag='.self::TAG_LENGTH.' byte di belakang, AAD="'.$aad.'".');
+
             return null;
         }
 
         $payload = json_decode($plaintext, true);
 
-        return is_array($payload) ? $payload : null;
+        if (! is_array($payload)) {
+            Log::warning('SSO decrypt gagal: hasil dekripsi bukan JSON object yang valid. Panjang plaintext='.strlen($plaintext).' byte.');
+
+            return null;
+        }
+
+        return $payload;
     }
 }
