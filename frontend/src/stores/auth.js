@@ -2,11 +2,50 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { authApi } from '@/api/auth'
 
-// Token disimpan di memory (state Pinia), bukan localStorage — mengurangi
-// risiko XSS, sesuai Architecture Document Bagian 3.3.
+// Token disimpan di sessionStorage (bukan localStorage) — bertahan lewat
+// refresh halaman selama tab masih terbuka, otomatis hilang begitu tab/
+// browser ditutup. Ini keputusan sadar mengubah dari in-memory murni
+// (Architecture Document 3.3 awalnya) karena refresh=logout terlalu
+// mengganggu di pemakaian nyata — tetap ada risiko XSS (skrip jahat bisa
+// baca sessionStorage), tapi lebih kecil paparannya dibanding localStorage
+// yang bertahan tanpa batas waktu lintas sesi browser.
+const STORAGE_TOKEN_KEY = 'tms-auth-token'
+const STORAGE_USER_KEY = 'tms-auth-user'
+
+function readStoredSession () {
+  try {
+    const token = sessionStorage.getItem(STORAGE_TOKEN_KEY)
+    const userJson = sessionStorage.getItem(STORAGE_USER_KEY)
+
+    return {
+      token: token || null,
+      user: userJson ? JSON.parse(userJson) : null,
+    }
+  } catch {
+    // Private browsing / storage dinonaktifkan — sesi tetap jalan di
+    // memory untuk request saat ini, cuma tidak bertahan lewat refresh.
+    return { token: null, user: null }
+  }
+}
+
+function persistSession (token, user) {
+  try {
+    if (token) {
+      sessionStorage.setItem(STORAGE_TOKEN_KEY, token)
+      sessionStorage.setItem(STORAGE_USER_KEY, JSON.stringify(user))
+    } else {
+      sessionStorage.removeItem(STORAGE_TOKEN_KEY)
+      sessionStorage.removeItem(STORAGE_USER_KEY)
+    }
+  } catch {
+    // diam-diam diabaikan, lihat catatan readStoredSession()
+  }
+}
+
 export const useAuthStore = defineStore('auth', () => {
-  const token = ref(null)
-  const user = ref(null)
+  const stored = readStoredSession()
+  const token = ref(stored.token)
+  const user = ref(stored.user)
 
   const isAuthenticated = computed(() => !!token.value)
   const role = computed(() => user.value?.role?.name ?? null)
@@ -27,6 +66,7 @@ export const useAuthStore = defineStore('auth', () => {
   function setSession (newToken, newUser) {
     token.value = newToken
     user.value = newUser
+    persistSession(newToken, newUser)
   }
 
   function hasPermission (permission) {
@@ -46,6 +86,7 @@ export const useAuthStore = defineStore('auth', () => {
     } finally {
       token.value = null
       user.value = null
+      persistSession(null, null)
     }
   }
 
