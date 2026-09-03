@@ -17,7 +17,6 @@ use App\Modules\Maintenance\Services\AttachmentService;
 use App\Modules\Maintenance\Services\WorkOrderCompletionService;
 use App\Modules\Maintenance\Services\WorkOrderItemService;
 use App\Modules\MasterData\Models\Mechanic;
-use App\Modules\SyopIntegration\Services\SyopSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -146,8 +145,7 @@ class WorkOrderController extends Controller
     public function updateStatus(
         UpdateWorkOrderStatusRequest $statusRequest,
         WorkOrder $workOrder,
-        WorkOrderCompletionService $completionService,
-        SyopSyncService $syopSyncService
+        WorkOrderCompletionService $completionService
     ) {
         if (! $statusRequest->user()->canAccessBranch($this->requestBranchId($workOrder))) {
             abort(403, 'Anda hanya dapat mengelola Work Order cabang Anda sendiri.');
@@ -181,16 +179,6 @@ class WorkOrderController extends Controller
 
         $workOrder->update($attributes);
         $completionService->maybeFinalize($workOrder);
-
-        // Armada ditandai nonaktif di SYOP selagi WO dikerjakan (supaya
-        // tidak ter-dispatch operasional dari sisi SYOP), aktif kembali
-        // begitu selesai — best-effort, lihat SyopSyncService::
-        // setFleetActiveInSyop(). Tidak berlaku untuk request tanpa fleet
-        // (mis. restock gudang) — method itu no-op kalau fleet null.
-        if ($newStatus === 'on_progress' || $newStatus === 'finished') {
-            $workOrder->loadMissing('request.fleet');
-            $syopSyncService->setFleetActiveInSyop($workOrder->request->fleet, $newStatus === 'finished');
-        }
 
         return new WorkOrderResource($workOrder->fresh());
     }

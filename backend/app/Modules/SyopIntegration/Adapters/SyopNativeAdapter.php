@@ -204,21 +204,4 @@ class SyopNativeAdapter implements SyopDataProviderInterface
         // per armada perlu dikonfirmasi dengan tim SYOP (lihat catatan class).
         return collect();
     }
-
-    /**
-     * $syopFleetId di sini adalah pro_master_transportir_mobil.id_master —
-     * SAMA dengan yang disimpan sebagai fleets.syop_fleet_id oleh
-     * SyopSyncService::syncFleetsForBranch() (lihat getEligibleFleets() di
-     * atas, alias kolomnya 'm.id_master as syop_id'). BUKAN
-     * pro_master_mobil.id_mobil — itu tabel armada yang berbeda, cuma
-     * dipakai getMasterArmada() untuk one-time import, tidak pernah
-     * disinkron ulang, jadi tidak relevan untuk toggle status berjalan ini.
-     */
-    public function setFleetActiveStatus(string $syopFleetId, bool $isActive): void
-    {
-        $this->connection()
-            ->table('pro_master_transportir_mobil')
-            ->where('id_master', $syopFleetId)
-            ->update(['is_active' => $isActive ? 1 : 0]);
-    }
 }

@@ -7,8 +7,6 @@ use App\Modules\MasterData\Models\Branch;
 use App\Modules\MasterData\Models\Driver;
 use App\Modules\SyopIntegration\Contracts\SyopDataProviderInterface;
 use Illuminate\Database\UniqueConstraintViolationException;
-use Illuminate\Support\Facades\Log;
-use Throwable;
 
 /**
  * Logika sinkronisasi armada/driver dari SYOP native — diekstrak dari
@@ -93,28 +91,5 @@ class SyopSyncService
         }
 
         return ['synced' => $synced];
-    }
-
-    /**
-     * Toggle is_active armada di SYOP saat Work Order maintenance mulai
-     * dikerjakan (nonaktif) / selesai (aktif kembali) — lihat
-     * WorkOrderController::updateStatus(). Best-effort SENGAJA: gagal di
-     * sini (grant MySQL belum diperluas, SYOP down, dst.) TIDAK BOLEH
-     * menggagalkan update status WO itu sendiri, jadi exception ditangkap &
-     * di-log sebagai warning, bukan dilempar ulang. Diam-diam no-op kalau
-     * armada tidak punya syop_fleet_id (belum pernah tersinkron dari SYOP,//
-     * atau request tanpa fleet, mis. restock gudang).
-     */
-    public function setFleetActiveInSyop(?Fleet $fleet, bool $isActive): void
-    {
-        if (! $fleet || ! $fleet->syop_fleet_id) {
-            return;
-        }
-
-        try {
-            $this->syop->setFleetActiveStatus($fleet->syop_fleet_id, $isActive);
-        } catch (Throwable $e) {
-            Log::warning("Gagal set is_active SYOP untuk armada {$fleet->plate_number} (syop_fleet_id={$fleet->syop_fleet_id}): {$e->getMessage()}");
-        }
     }
 }
