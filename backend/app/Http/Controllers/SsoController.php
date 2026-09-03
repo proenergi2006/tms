@@ -10,11 +10,17 @@ use Illuminate\Validation\ValidationException;
 /**
  * Menerima token SSO terenkripsi dari SYOP (Architecture Document Bagian
  * 7.1). Token dienkripsi AES-256-GCM oleh sisi SYOP dengan
- * SYOP_SSO_KEY/SYOP_SSO_AAD, di-base64, urutan byte IV(12) + ciphertext +
- * auth tag(16). Auth tag GCM WAJIB diverifikasi oleh openssl_decrypt (return
- * false kalau gagal) — beda dari sekadar base64_decode+json_decode tanpa
+ * SYOP_SSO_KEY/SYOP_SSO_AAD, base64url (tanpa padding), urutan byte
+ * IV(12) + TAG(16) + ciphertext — dikonfirmasi langsung dari kode
+ * enkripsi SYOP v3 (action/sso-tms.php) yang sebenarnya, bukan asumsi.
+ * Auth tag GCM WAJIB diverifikasi oleh openssl_decrypt (return false
+ * kalau gagal) — beda dari sekadar base64_decode+json_decode tanpa
  * verifikasi, yang membuat token bisa dipalsukan bebas oleh siapa pun yang
  * tahu bentuk payload-nya.
+ *
+ * Payload dari SYOP v3: {iss, email, wilayah_id, iat, exp, nonce} — TIDAK
+ * ada field sso_id (beda dari asumsi awal), exp = iat + 60 (token cuma
+ * valid 60 detik). email sudah di-lowercase+trim di sisi SYOP.
  *
  * Catatan: key/AAD (SYOP_SSO_KEY/SYOP_SSO_AAD) sengaja dipakai ulang dari
  * pasangan SYOP v3<->SYOP v4 (keputusan eksplisit, bukan default yang
@@ -92,12 +98,6 @@ class SsoController extends Controller
         ]);
     }
 
-    /**
-     * TODO: konfirmasi ke tim SYOP kalau urutan/panjang byte token asli
-     * mereka beda dari asumsi IV(12)+ciphertext+tag(16) di sini — kalau
-     * beda, decrypt gagal dengan aman (null) tapi login tidak akan pernah
-     * berhasil sampai disesuaikan dengan format sebenarnya.
-     */
     private function decryptToken(string $token): ?array
     {
         // Token asli dari SYOP ternyata base64url (pakai '-'/'_', tanpa
@@ -135,9 +135,11 @@ class SsoController extends Controller
             return null;
         }
 
+        // Urutan byte SYOP v3 (dikonfirmasi dari kode aslinya): IV(12) +
+        // TAG(16) + ciphertext — tag di TENGAH, bukan di paling belakang.
         $iv = substr($raw, 0, self::IV_LENGTH);
-        $tag = substr($raw, -self::TAG_LENGTH);
-        $ciphertext = substr($raw, self::IV_LENGTH, -self::TAG_LENGTH);
+        $tag = substr($raw, self::IV_LENGTH, self::TAG_LENGTH);
+        $ciphertext = substr($raw, self::IV_LENGTH + self::TAG_LENGTH);
 
         $plaintext = openssl_decrypt(
             $ciphertext,
@@ -150,13 +152,7 @@ class SsoController extends Controller
         );
 
         if ($plaintext === false) {
-            // Auth tag GCM tidak cocok — kemungkinan besar asumsi urutan
-            // byte (IV di depan, tag di belakang) atau AAD-nya beda dari
-            // implementasi SYOP asli, BUKAN cuma key salah (kalau key yang
-            // salah, error OpenSSL biasanya sama persis: tag verification
-            // failed, tidak bisa dibedakan dari sini). Panjang ciphertext
-            // dilog untuk bantu tim SYOP cocokkan spek format mereka.
-            Log::warning('SSO decrypt gagal: openssl_decrypt AES-256-GCM gagal (auth tag tidak cocok). Panjang raw='.strlen($raw)." byte, asumsi IV=".self::IV_LENGTH.' byte di depan + tag='.self::TAG_LENGTH.' byte di belakang, AAD="'.$aad.'".');
+            Log::warning('SSO decrypt gagal: openssl_decrypt AES-256-GCM gagal (auth tag tidak cocok). Panjang raw='.strlen($raw)." byte, IV=".self::IV_LENGTH.' byte + TAG='.self::TAG_LENGTH.' byte + ciphertext='.strlen($ciphertext).' byte, AAD="'.$aad.'".');
 
             return null;
         }
@@ -165,6 +161,15 @@ class SsoController extends Controller
 
         if (! is_array($payload)) {
             Log::warning('SSO decrypt gagal: hasil dekripsi bukan JSON object yang valid. Panjang plaintext='.strlen($plaintext).' byte.');
+
+            return null;
+        }
+
+        // Token SYOP v3 sengaja berumur pendek (60 detik, lihat docblock
+        // kelas) — exp WAJIB dicek di sini, openssl_decrypt tidak tahu soal
+        // waktu, cuma soal integritas ciphertext.
+        if (isset($payload['exp']) && time() > (int) $payload['exp']) {
+            Log::warning('SSO decrypt gagal: token sudah kedaluwarsa (exp='.$payload['exp'].', now='.time().').');
 
             return null;
         }
