@@ -59,4 +59,17 @@ interface SyopDataProviderInterface
      * Data perjalanan/distribusi dari SYOP.
      */
     public function getDataPerjalanan(array $filters = []): Collection;
+
+    /**
+     * SATU-SATUNYA operasi TULIS ke SYOP di seluruh interface ini (semua
+     * method lain read-only, lihat docblock kelas) — keputusan produk:
+     * armada yang sedang dikerjakan Work Order maintenance ditandai
+     * nonaktif di SYOP (is_active=0) supaya tidak ter-dispatch operasional
+     * selagi bengkel, dikembalikan aktif (is_active=1) begitu WO selesai.
+     * Lihat WorkOrderController::updateStatus(). Kredensial SYOP_DB_* WAJIB
+     * diberi hak UPDATE tambahan (selain SELECT) khusus kolom ini oleh tim
+     * SYOP — tanpa itu, panggilan ini gagal (ditangani sebagai best-effort
+     * oleh pemanggil, tidak boleh menggagalkan update status WO itu sendiri).
+     */
+    public function setFleetActiveStatus(string $syopFleetId, bool $isActive): void;
 }
