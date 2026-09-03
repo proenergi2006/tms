@@ -100,7 +100,19 @@ class SsoController extends Controller
      */
     private function decryptToken(string $token): ?array
     {
-        $raw = base64_decode($token, true);
+        // Token asli dari SYOP ternyata base64url (pakai '-'/'_', tanpa
+        // padding '=') — dikonfirmasi langsung dari token production nyata,
+        // bukan base64 standar seperti asumsi awal. base64_decode(strict)
+        // menolak karakter '-'/'_' dan langsung return false untuk base64url,
+        // jadi harus dinormalisasi dulu. strtr terhadap string yang sudah
+        // base64 standar tidak berefek (aman untuk keduanya).
+        $normalized = strtr($token, '-_', '+/');
+        $padding = strlen($normalized) % 4;
+        if ($padding > 0) {
+            $normalized .= str_repeat('=', 4 - $padding);
+        }
+
+        $raw = base64_decode($normalized, true);
 
         if ($raw === false || strlen($raw) <= self::IV_LENGTH + self::TAG_LENGTH) {
             return null;
