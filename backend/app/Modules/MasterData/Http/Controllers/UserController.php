@@ -71,15 +71,20 @@ class UserController extends Controller
         // Soft delete (users pakai SoftDeletes supaya riwayat yang merujuk
         // user ini — requests.requested_by, approval_logs.approver_user_id,
         // keduanya restrictOnDelete — tetap utuh) tidak otomatis
-        // membebaskan email/username karena unique constraint keduanya
-        // berlaku untuk semua baris termasuk yang sudah soft-deleted. Mangle
-        // di sini supaya alamat/username yang sama bisa dipakai lagi untuk
-        // akun baru — username dibatasi VARCHAR(50), jadi mangle-nya TIDAK
-        // menyisipkan username asli mentah-mentah (bisa kepanjangan &
-        // terpotong DB), cukup id + random unik.
+        // membebaskan email/username/sso_id karena unique constraint
+        // ketiganya berlaku untuk semua baris termasuk yang sudah
+        // soft-deleted. Mangle di sini supaya nilai yang sama bisa dipakai
+        // lagi untuk akun baru — username & sso_id dibatasi panjangnya
+        // (VARCHAR 50/100), jadi mangle-nya TIDAK menyisipkan nilai asli
+        // mentah-mentah (bisa kepanjangan & terpotong DB), cukup id +
+        // random unik. sso_id SEMPAT KELUPAAN di sini (bug nyata: baris
+        // lama yang masih pegang sso_id seed-* bikin DatabaseSeeder gagal
+        // insert user baru dengan email sama karena bentrok unique sso_id,
+        // walau email-nya sendiri sudah bebas) — sekarang ikut di-mangle.
         $user->update([
             'email' => "deleted-{$user->id}-{$user->email}",
             'username' => "deleted-{$user->id}-".Str::random(8),
+            'sso_id' => $user->sso_id ? "deleted-{$user->id}-".Str::random(8) : null,
         ]);
         $user->delete();
 
