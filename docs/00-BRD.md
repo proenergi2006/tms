@@ -1,6 +1,6 @@
-# Business Requirements Document (BRD) — TMS v1.1
+# Business Requirements Document (BRD) — TMS v1.2
 
-> Disusun berdasarkan [PRD (Product Requirements Document) v1.1](01-PRD.md). Dokumen ini menambahkan elemen-elemen level bisnis (business case, proses as-is, business rules, RACI, budget, sign-off) yang belum tercakup di PRD. Bagian bertanda **[DIISI TIM BISNIS]** sengaja dikosongkan/berupa kerangka — memuat angka pasti (biaya, target KPI, tanggal) di sini tanpa data riil dari pemilik proses akan menyesatkan, bukan membantu.
+> Disusun berdasarkan [PRD (Product Requirements Document) v1.2](01-PRD.md). Dokumen ini menambahkan elemen-elemen level bisnis (business case, proses as-is, business rules, RACI, budget, sign-off) yang belum tercakup di PRD. Bagian bertanda **[DIISI TIM BISNIS]** sengaja dikosongkan/berupa kerangka — memuat angka pasti (biaya, target KPI, tanggal) di sini tanpa data riil dari pemilik proses akan menyesatkan, bukan membantu.
 
 ## 1. Ringkasan Eksekutif
 
@@ -55,13 +55,13 @@ Proses operasional armada saat ini berjalan melalui Google Apps Script dengan ka
 
 ## 5. Analisis Biaya-Manfaat (Cost-Benefit — Kerangka)
 
-Proyek ini dikembangkan secara internal (bukan pengadaan vendor eksternal), sehingga komponen biaya utamanya adalah waktu tim development, infrastruktur, dan pelatihan pengguna — bukan biaya lisensi/pembelian perangkat lunak pihak ketiga (kecuali template UI Materio, lihat catatan lisensi di PRD Bagian 8.5).
+Proyek ini dikembangkan secara internal (bukan pengadaan vendor eksternal), sehingga komponen biaya utamanya adalah waktu tim development, infrastruktur, dan pelatihan pengguna — tidak ada biaya lisensi/pembelian perangkat lunak pihak ketiga (rencana awal memakai template berbayar Materio tidak jadi dipakai, lihat PRD Bagian 8.5).
 
 | Komponen Biaya | Estimasi | Catatan |
 |---|---|---|
 | Waktu tim development (backend + frontend) | **[DIISI TIM BISNIS]** | Dihitung dari alokasi resource internal per fase (lihat roadmap PRD Bagian 14) |
 | Infrastruktur (server, database, backup) | **[DIISI TIM BISNIS]** | Perlu koordinasi dengan tim infrastruktur — lihat NFR-10 (RPO/RTO) di PRD |
-| Lisensi template UI (Materio), bila perlu extended license | **[DIISI TIM BISNIS]** | Lihat risiko lisensi di PRD Bagian 12 |
+| ~~Lisensi template UI (Materio)~~ | Rp 0 | **Tidak jadi diperlukan** — TMS akhirnya dibangun dari Vuetify polos, bukan source Materio, tepat untuk menghindari ketidakjelasan lisensi ini (lihat PRD Bagian 8.5) |
 | Pelatihan & change management pengguna | **[DIISI TIM BISNIS]** | Lihat rencana change management, Bagian 11 |
 | Kontingensi (buffer risiko) | **[DIISI TIM BISNIS]** | Rekomendasi umum 10–20% dari estimasi total |
 
@@ -91,19 +91,20 @@ Mengikuti [PRD Bagian 3](01-PRD.md#3-ruang-lingkup) — disalin agar dokumen ini
 
 ## 7. Stakeholder & RACI Matrix
 
-| Aktivitas / Keputusan | SA | Fleet Operations | Kepala Pool | Tim Logistik | Logistik HO | Admin Sistem | Manajemen |
-|---|---|---|---|---|---|---|---|
-| Membuat pengajuan + Work Order (satu langkah) | **R/A** | I | I | I | I | I | I |
-| Verifikasi tahap 1 (bisa edit pengajuan/tolak) | I | **R/A** | I | I | I | I | I |
-| Approval akhir tahap 2 (bisa tolak) | I | I | **R/A** | I | I | I | I |
-| Melaksanakan pekerjaan & update status (start s/d selesai) | **R** | I | I | I | I | I | I |
-| Realisasi sparepart & penutupan Work Order | **R/A** | I | I | I | I | I | I |
-| Konfigurasi urutan tahap approval (dinamis) & RBAC | I | I | I | I | I | **R/A** | I |
-| Mengelola master data operasional | I | R | I | **R/A** | I | C | I |
-| Memantau proses & profitabilitas lintas cabang (read-only) | I | I | I | I | **R/A** | I | C |
-| Persetujuan business case (go/no-go) | — | I | I | C | I | I | **A** |
+| Aktivitas / Keputusan | SA | Fleet Operations | Kepala Pool | Tim Logistik | Admin Logistik | Logistik HO | Admin Sistem | Manajemen |
+|---|---|---|---|---|---|---|---|---|
+| Membuat pengajuan + Work Order (satu langkah) | **R/A** | I | I | I | I | I | I | I |
+| Verifikasi tahap 1 (bisa edit pengajuan/tolak) | I | **R/A** | I | I | I | I | I | I |
+| Approval akhir tahap 2 (bisa tolak) | I | I | **R/A** | I | I | I | I | I |
+| Melaksanakan pekerjaan & update status (start s/d selesai) | **R** | I | I | I | I | I | I | I |
+| Realisasi sparepart & penutupan Work Order | **R/A** | I | I | I | I | I | I | I |
+| Konfigurasi urutan tahap approval (dinamis) & RBAC | I | I | I | I | I | I | **R/A** | I |
+| Mengelola master data operasional (kecuali cabang & sparepart) | I | R | I | **R/A** | I | I | C | I |
+| Mengelola data sparepart (stok, CRUD) | I | R | I | R | **R/A** | I | C | I |
+| Memantau proses & profitabilitas lintas cabang (read-only) | I | I | I | I | I | **R/A** | I | C |
+| Persetujuan business case (go/no-go) | — | I | I | C | I | I | I | **A** |
 
-R = Responsible, A = Accountable, C = Consulted, I = Informed. Peran Driver, Mekanik, BM, dan Finance yang ada pada rancangan awal telah dihapus dari struktur final — SA menggantikan fungsi Driver/Mekanik (pengajuan sekaligus eksekusi), sementara Fleet Operations & Kepala Pool menggantikan seluruh rantai BM/Finance dalam approval (lihat Bagian 10 BRU-01/02 dan Riwayat Dokumen).
+R = Responsible, A = Accountable, C = Consulted, I = Informed. Peran Driver, Mekanik, BM, dan Finance yang ada pada rancangan awal telah dihapus dari struktur final — SA menggantikan fungsi Driver/Mekanik (pengajuan sekaligus eksekusi), sementara Fleet Operations & Kepala Pool menggantikan seluruh rantai BM/Finance dalam approval (lihat Bagian 10 BRU-01/02 dan Riwayat Dokumen). **Admin Logistik** — role tambahan (belum ada di rancangan awal): khusus pengelola sparepart per cabang, view-only untuk modul lain, tidak punya wewenang approval.
 
 ## 8. Proses Bisnis: As-Is vs To-Be
 
@@ -151,7 +152,7 @@ Level bisnis (business capability), sebagai payung dari kebutuhan fungsional det
 - **BRU-02** — Rantai approval bersifat **dinamis dan dapat dikonfigurasi** oleh Admin Sistem (tabel `approval_steps`) tanpa perubahan kode, dan berlaku **seragam untuk seluruh cabang** — setiap cabang memiliki Fleet Operations dan Kepala Pool sendiri. Mekanisme approval berjenjang berbasis ambang nominal biaya (BM & Finance) pada rancangan awal telah dihapus dari desain final.
 - **BRU-03** — Penolakan pada tahap manapun wajib disertai alasan tertulis dan menghentikan alur (tidak lanjut ke tahap berikutnya).
 - **BRU-04** — Setiap approver hanya berwenang bertindak pada tahap yang menjadi wewenangnya di cabangnya sendiri; sistem menolak aksi approval di luar tahap/role/cabang yang sesuai.
-- **BRU-05** — Pengguna dengan role bercabang (SA, Fleet Operations, Kepala Pool, Tim Logistik) hanya dapat mengakses & mengelola data cabangnya sendiri; role Head Office (Admin IT/GA, Admin Sistem, Manajemen, **Logistik HO**) beroperasi lintas cabang. Logistik HO khusus bersifat pemantauan (hanya melihat pengajuan/armada/master data/laporan seluruh cabang), tanpa wewenang membuat, mengelola, atau approval.
+- **BRU-05** — Pengguna dengan role bercabang (SA, Fleet Operations, Kepala Pool, Tim Logistik, **Admin Logistik**) hanya dapat mengakses & mengelola data cabangnya sendiri; role Head Office (Admin IT/GA, Admin Sistem, Manajemen, **Logistik HO**) beroperasi lintas cabang. Logistik HO khusus bersifat pemantauan (hanya melihat pengajuan/armada/master data/laporan seluruh cabang), tanpa wewenang membuat, mengelola, atau approval.
 - **BRU-06** — Stok sparepart tidak boleh menjadi negatif dan **hanya berkurang untuk pelaksanaan internal**, tepat pada saat realisasi sparepart (bukan saat pengajuan dibuat); permintaan pemakaian yang melebihi stok tersedia ditolak sistem. Pelaksanaan oleh vendor eksternal tidak pernah memotong stok gudang TMS — item dicatat sebagai teks bebas, bukan tertaut ke katalog sparepart.
 - **BRU-07** — Biaya operasional & riwayat perbaikan dicatat final ke armada begitu pekerjaan selesai secara fisik **dan** lolos seluruh tahap approval — termasuk biaya jasa/sparepart dari vendor eksternal, tanpa gerbang verifikasi tambahan pasca-selesai.
 - **BRU-08** — Seluruh perubahan pada data approval dan data berbiaya wajib tercatat pada audit log dan tidak dapat diubah/dihapus oleh pengguna biasa.
@@ -161,7 +162,7 @@ Level bisnis (business capability), sebagai payung dari kebutuhan fungsional det
 
 | Tahapan | Aktivitas | Penanggung Jawab |
 |---|---|---|
-| Sosialisasi | Komunikasi rencana migrasi ke seluruh pengguna (SA, Fleet Operations, Kepala Pool, Tim Logistik, Logistik HO) sebelum go-live. | Manajemen, Tim Logistik |
+| Sosialisasi | Komunikasi rencana migrasi ke seluruh pengguna (SA, Fleet Operations, Kepala Pool, Tim Logistik, Admin Logistik, Logistik HO) sebelum go-live. | Manajemen, Tim Logistik |
 | Pelatihan | Pelatihan penggunaan aplikasi per role — SA sebagai titik masuk utama (pengajuan sekaligus eksekusi Work Order), Fleet Operations & Kepala Pool untuk alur approval. | Tim Logistik, Admin Sistem |
 | Migrasi bertahap | Migrasi dilakukan bertahap per cabang (bukan serentak) untuk mengurangi risiko gangguan operasional. | Tim Logistik |
 | Masa transisi paralel | Periode berjalan berdampingan dengan Google Apps Script (bila diperlukan) untuk validasi data sebelum pelepasan penuh. | Tim Logistik, Manajemen |
@@ -238,3 +239,4 @@ Mengikuti [PRD Bagian 15](01-PRD.md#15-lampiran--glosarium) — tidak diduplikas
 |---|---|---|
 | 1.0 | Draft awal | Disusun dari PRD v1.1 + elemen BRD (business case, RACI, business rules, budget framework, sign-off). Bagian bertanda [DIISI TIM BISNIS] masih menunggu data dari pemilik proses. |
 | 1.1 | 2026-08-13 | Restrukturisasi peran & alur approval hasil implementasi — menggantikan rancangan awal (Driver/Mekanik/Kepala Pool/BM/Tim Logistik/Finance, 4 tahap approval berbasis ambang nominal) dengan struktur final: **Service Advisor (SA)** membuat pengajuan sekaligus Work Order dan menjalankannya sendiri hingga selesai (Driver/Mekanik dihapus); approval jadi **2 tahap dinamis & dapat dikonfigurasi** (Fleet Operations → Kepala Pool per cabang, BM & Finance dihapus dari rantai approval); No. TAR dibuat otomatis sistem; realisasi sparepart terpisah dari rencana awal dan **hanya memotong stok untuk pelaksana internal** (vendor eksternal tidak menyentuh stok, tapi biayanya tetap masuk profit/loss armada); ditambahkan role **Logistik HO** (pemantauan lintas cabang, read-only). Bagian yang diperbarui: 4, 6.1, 7 (RACI), 8.1, 10 (BRU-01/02/05/06/07, tambahan BRU-09), 11, 14, 16. |
+| 1.2 | 2026-09-04 | Selaras dengan PRD v1.2 (sinkronisasi menyeluruh dengan implementasi sebenarnya — lihat Riwayat Dokumen PRD untuk daftar lengkap). Ditambahkan role **Admin Logistik** (per cabang, full CRUD sparepart, view-only modul lain, tidak punya wewenang approval) ke RACI (Bagian 7), BRU-05 (Bagian 10), dan rencana sosialisasi (Bagian 11). SSO (BR-09/FR-26 di PRD) sudah berstatus terimplementasi, bukan lagi rencana. |
