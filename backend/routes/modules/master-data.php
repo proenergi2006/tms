@@ -1,8 +1,11 @@
 <?php
 
 // Endpoint Master Data — Design Document Bagian 3.2.
-// RBAC: baca (index/show) perlu master-data.view, tulis (store/update/
-// destroy) perlu master-data.manage — lihat RolePermissionSeeder.
+// RBAC: baca (index/show) perlu master-data.view untuk SEMUA resource
+// (termasuk branches/spareparts). Tulis (store/update/destroy) BEDA-BEDA
+// per resource: master-data.manage untuk fleet/driver/mechanic/vendor/
+// warehouse/cost-type/job-type, branch.manage khusus branches,
+// sparepart.manage khusus spareparts — lihat RolePermissionSeeder.
 
 use App\Modules\Fleet\Http\Controllers\FleetController;
 use App\Modules\MasterData\Http\Controllers\BranchController;
@@ -21,7 +24,6 @@ $resources = [
     'mechanics' => MechanicController::class,
     'vendors' => VendorController::class,
     'warehouses' => WarehouseController::class,
-    'spareparts' => SparepartController::class,
 ];
 
 foreach ($resources as $uri => $controller) {
@@ -34,6 +36,13 @@ foreach ($resources as $uri => $controller) {
 // branch.manage (Admin Sistem saja), lihat RolePermissionSeeder.
 Route::apiResource('branches', BranchController::class)->only(['index', 'show'])->middleware('permission:master-data.view');
 Route::apiResource('branches', BranchController::class)->only(['store', 'update', 'destroy'])->middleware('permission:branch.manage');
+
+// Sparepart juga dipisah dari loop di atas — baca tetap master-data.view,
+// tapi tulis pakai sparepart.manage (bukan master-data.manage) supaya Admin
+// Logistik bisa full CRUD sparepart tanpa otomatis dapat CRUD resource
+// master data lain juga, lihat RolePermissionSeeder.
+Route::apiResource('spareparts', SparepartController::class)->only(['index', 'show'])->middleware('permission:master-data.view');
+Route::apiResource('spareparts', SparepartController::class)->only(['store', 'update', 'destroy'])->middleware('permission:sparepart.manage');
 
 Route::post('drivers/sync-syop', [DriverController::class, 'syncFromSyop'])->middleware('permission:master-data.manage');
 Route::post('fleets/sync-syop', [FleetController::class, 'syncFromSyop'])->middleware('permission:master-data.manage');

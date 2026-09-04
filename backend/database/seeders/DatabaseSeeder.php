@@ -35,7 +35,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $roleNames = ['sa', 'fleet_operations', 'kepala_pool', 'tim_logistik', 'logistik_ho', 'admin_it_ga', 'admin_sistem', 'manajemen'];
+        $roleNames = ['sa', 'fleet_operations', 'kepala_pool', 'tim_logistik', 'admin_logistik', 'logistik_ho', 'admin_it_ga', 'admin_sistem', 'manajemen'];
         $roles = collect($roleNames)->mapWithKeys(fn ($name) => [$name => Role::firstOrCreate(['name' => $name])]);
 
         $this->call(RolePermissionSeeder::class);
@@ -104,6 +104,27 @@ class DatabaseSeeder extends Seeder
                     'role_id' => $roles['tim_logistik']->id,
                     'branch_id' => $branch->id,
                     'sso_id' => "seed-tim_logistik-{$slug}",
+                    'password' => self::SEED_PASSWORD,
+                ]
+            );
+        }
+
+        // Admin Logistik — satu per cabang, cuma bisa lihat master data
+        // (fleet/driver/mechanic/vendor/warehouse/cost-type/job-type) dan
+        // modul fleet/pengajuan/laporan (view saja, mirip Fleet Operations
+        // dari sisi visibilitas), TAPI full CRUD khusus sparepart (lihat
+        // sparepart.manage di RolePermissionSeeder) — tidak terlibat
+        // approval maupun eksekusi Work Order sama sekali.
+        foreach ($branches as $code => $branch) {
+            $slug = strtolower($code);
+            User::firstOrCreate(
+                ['email' => "admin_logistik.{$slug}@tms.test"],
+                [
+                    'name' => "Admin Logistik ({$branch->name})",
+                    'username' => "admin_logistik.{$slug}",
+                    'role_id' => $roles['admin_logistik']->id,
+                    'branch_id' => $branch->id,
+                    'sso_id' => "seed-admin_logistik-{$slug}",
                     'password' => self::SEED_PASSWORD,
                 ]
             );

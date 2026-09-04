@@ -21,9 +21,13 @@ class RolePermissionSeeder extends Seeder
      * konfigurasi sistem — PRD Bagian 10).
      */
     private const CATALOG = [
-        // Master Data (branches, fleets, drivers, mechanics, vendors,
-        // warehouses, spareparts, cost-types, job-types)
-        'master-data.view' => ['sa', 'fleet_operations', 'kepala_pool', 'tim_logistik', 'logistik_ho', 'admin_it_ga', 'manajemen'],
+        // Master Data (fleets, drivers, mechanics, vendors, warehouses,
+        // cost-types, job-types — spareparts dipisah, lihat sparepart.manage
+        // di bawah). Admin Logistik SENGAJA cuma dapat .view di sini (lihat
+        // sparepart.manage) — dia boleh full CRUD sparepart, tapi cuma boleh
+        // lihat data master lain (mirip Fleet Operations dari sisi visibilitas,
+        // tapi tanpa wewenang approval/edit pengajuan Fleet Operations).
+        'master-data.view' => ['sa', 'fleet_operations', 'kepala_pool', 'tim_logistik', 'logistik_ho', 'admin_it_ga', 'manajemen', 'admin_logistik'],
         'master-data.manage' => ['fleet_operations', 'tim_logistik'],
 
         // Cabang (branches) sengaja DIPISAH dari master-data.manage — ini
@@ -34,6 +38,17 @@ class RolePermissionSeeder extends Seeder
         // master-data.view yang sudah ada — cuma tidak bisa ubah/hapus.
         'branch.manage' => [],
 
+        // Sparepart DIPISAH dari master-data.manage (beda dari resource
+        // master data lain di atas) supaya Admin Logistik bisa full CRUD
+        // sparepart TANPA otomatis dapat wewenang CRUD fleet/driver/
+        // mechanic/vendor/warehouse/cost-type/job-type juga — kalau
+        // sparepart masih nempel di master-data.manage, memisahkan
+        // permission Admin Logistik jadi tidak mungkin (satu permission
+        // untuk 7 resource sekaligus). fleet_operations & tim_logistik
+        // tetap dipertahankan di sini (sebelumnya dapat lewat
+        // master-data.manage) supaya kapasitas mereka tidak berubah.
+        'sparepart.manage' => ['fleet_operations', 'tim_logistik', 'admin_logistik'],
+
         // Pengajuan & Work Order — SA membuat pengajuan SEKALIGUS Work Order
         // dalam satu langkah (diagnosis, prioritas, estimasi biaya, pelaksana
         // internal/eksternal, No. TAR langsung terisi di awal untuk
@@ -42,7 +57,7 @@ class RolePermissionSeeder extends Seeder
         // WorkOrderController::realizeItems()) karena mekanik dihapus. Tim
         // Logistik TIDAK terlibat di eksekusi Work Order.
         'request.create' => ['sa'],
-        'request.view' => ['sa', 'fleet_operations', 'kepala_pool', 'tim_logistik', 'logistik_ho', 'manajemen'],
+        'request.view' => ['sa', 'fleet_operations', 'kepala_pool', 'tim_logistik', 'logistik_ho', 'manajemen', 'admin_logistik'],
         'work-order.manage' => ['sa'],
         'work-order.update-status' => ['sa'],
 
@@ -53,7 +68,11 @@ class RolePermissionSeeder extends Seeder
         // request.edit di bawah), baru Kepala Pool cabang approval akhir.
         // Setiap cabang sekarang punya keduanya sendiri (region &
         // leader_operations dihapus total). Tim Logistik TIDAK punya
-        // wewenang approval.
+        // wewenang approval — begitu juga Admin Logistik (dia dapat
+        // fleet.view/report.view/request.view seperti Fleet Operations dari
+        // sisi VISIBILITAS, tapi sengaja TIDAK dapat approval.view/
+        // approval.act/request.edit — perannya cuma lihat + kelola
+        // sparepart, bukan approver).
         'approval.view' => ['fleet_operations', 'kepala_pool'],
         'approval.act' => ['fleet_operations', 'kepala_pool'],
 
@@ -73,9 +92,9 @@ class RolePermissionSeeder extends Seeder
         // fleet.view/report.view/request.view/master-data.view TANPA
         // pembatasan cabang — bisa melihat proses semua cabang sekaligus,
         // murni pemantauan (tidak ada permission manage/approval sama sekali).
-        'fleet.view' => ['sa', 'fleet_operations', 'kepala_pool', 'tim_logistik', 'logistik_ho', 'manajemen'],
+        'fleet.view' => ['sa', 'fleet_operations', 'kepala_pool', 'tim_logistik', 'logistik_ho', 'manajemen', 'admin_logistik'],
         'fleet.manage' => ['tim_logistik'],
-        'report.view' => ['fleet_operations', 'tim_logistik', 'logistik_ho', 'manajemen'],
+        'report.view' => ['fleet_operations', 'tim_logistik', 'logistik_ho', 'manajemen', 'admin_logistik'],
 
         // Asset Registry
         'asset.view' => ['admin_it_ga', 'manajemen'],

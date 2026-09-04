@@ -17,13 +17,15 @@
   // Wireframe asli untuk mengelolanya, padahal backend sudah CRUD penuh.
   const auth = useAuthStore()
   const { t } = useI18n()
-  // Cabang dipisah dari permission master-data.manage yang dipakai tab lain
-  // (driver/mekanik/vendor/dst) — cuma Admin Sistem yang boleh CRUD cabang,
+  // Cabang & Sparepart masing-masing dipisah dari permission
+  // master-data.manage yang dipakai tab lain (driver/mekanik/vendor/dst) —
   // lihat RolePermissionSeeder & routes/modules/master-data.php backend.
+  const MANAGE_PERMISSION_BY_TAB = {
+    branches: 'branch.manage',
+    spareparts: 'sparepart.manage',
+  }
   const canManage = computed(() => (
-    tab.value === 'branches'
-      ? auth.hasPermission('branch.manage')
-      : auth.hasPermission('master-data.manage')
+    auth.hasPermission(MANAGE_PERMISSION_BY_TAB[tab.value] ?? 'master-data.manage')
   ))
 
   const refData = ref({ branches: [], warehouses: [] })

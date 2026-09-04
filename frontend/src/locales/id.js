@@ -132,6 +132,7 @@ export default {
       sa: 'Service Advisor',
       kepala_pool: 'Kepala Pool',
       tim_logistik: 'Tim Logistik',
+      admin_logistik: 'Admin Logistik',
       logistik_ho: 'Logistik HO',
       admin_it_ga: 'Admin IT & GA',
       admin_sistem: 'Admin Sistem',
