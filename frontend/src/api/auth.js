@@ -1,9 +1,12 @@
 import api from '@/plugins/axios'
 
-// Login kredensial TMS (email+password) — jalur utama, dibutuhkan karena
-// tidak semua pengguna punya akun SYOP untuk SSO. Lihat AuthController.
+// Login kredensial TMS (username+password) — jalur utama, dibutuhkan karena
+// tidak semua pengguna punya akun SYOP untuk SSO. Username, BUKAN email —
+// email tetap ada di akun tapi cuma dipakai SSO (lihat ssoApi di bawah),
+// supaya orang yang perlu banyak akun (1 orang jadi Kepala Pool di beberapa
+// cabang) tidak harus ketik email lengkap tiap akun. Lihat AuthController.
 export const authApi = {
-  login: (email, password) => api.post('/auth/login', { email, password }),
+  login: (username, password) => api.post('/auth/login', { username, password }),
   logout: () => api.post('/auth/logout'),
 }
 

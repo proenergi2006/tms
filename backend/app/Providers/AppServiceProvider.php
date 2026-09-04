@@ -52,7 +52,7 @@ class AppServiceProvider extends ServiceProvider
         // belakang NAT yang sama), dan tidak per email saja supaya
         // penyerang tidak bisa mengunci akun korban dari IP mana pun.
         RateLimiter::for('login', fn (Request $request) => Limit::perMinute(5)
-            ->by(Str::lower((string) $request->input('email')).'|'.$request->ip()));
+            ->by(Str::lower((string) $request->input('username')).'|'.$request->ip()));
 
         // Token SSO belum terdekripsi saat request masuk (tidak ada email di
         // body), jadi dikunci per-IP saja — cukup untuk menahan brute-force

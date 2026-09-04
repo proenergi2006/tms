@@ -28,7 +28,11 @@
     if (filters.value.status && u.status !== filters.value.status) return false
     if (filters.value.search) {
       const needle = filters.value.search.toLowerCase()
-      if (!u.name.toLowerCase().includes(needle) && !u.email.toLowerCase().includes(needle)) return false
+      if (
+        !u.name.toLowerCase().includes(needle)
+        && !u.username?.toLowerCase().includes(needle)
+        && !u.email.toLowerCase().includes(needle)
+      ) return false
     }
     return true
   }))
@@ -42,6 +46,7 @@
   const headers = computed(() => [
     { title: t('common.rowNo'), key: 'no', sortable: false, width: 56 },
     { title: t('users.name'), key: 'name' },
+    { title: t('users.username'), key: 'username' },
     { title: t('users.email'), key: 'email' },
     { title: t('rbac.roleName'), key: 'role' },
     { title: t('common.branch'), key: 'branch' },
@@ -78,7 +83,7 @@
   const formErrorMessage = ref(null)
 
   function emptyForm () {
-    return { id: null, name: '', email: '', password: '', role_id: null, branch_id: null, status: 'aktif' }
+    return { id: null, name: '', username: '', email: '', password: '', role_id: null, branch_id: null, status: 'aktif' }
   }
   const form = ref(emptyForm())
 
@@ -94,6 +99,7 @@
     form.value = {
       id: user.id,
       name: user.name,
+      username: user.username,
       email: user.email,
       password: '',
       role_id: user.role?.id ?? null,
@@ -274,7 +280,16 @@
           <v-alert v-if="formErrorMessage" class="mb-4" type="error" variant="tonal">{{ formErrorMessage }}</v-alert>
 
           <v-text-field v-model="form.name" :label="t('users.name')" />
-          <v-text-field v-model="form.email" :label="t('users.email')" type="email" />
+          <v-text-field v-model="form.username" :hint="t('users.usernameHint')" :label="t('users.username')" persistent-hint />
+
+          <v-text-field
+            v-model="form.email"
+            class="mt-2"
+            :hint="t('users.emailHint')"
+            :label="t('users.email')"
+            persistent-hint
+            type="email"
+          />
 
           <v-text-field
             v-model="form.password"

@@ -82,6 +82,7 @@ class DatabaseSeeder extends Seeder
                 ['email' => "sa.{$slug}@tms.test"],
                 [
                     'name' => "SA ({$branch->name})",
+                    'username' => "sa.{$slug}",
                     'role_id' => $roles['sa']->id,
                     'branch_id' => $branch->id,
                     'sso_id' => "seed-sa-{$slug}",
@@ -99,6 +100,7 @@ class DatabaseSeeder extends Seeder
                 ['email' => "tim_logistik.{$slug}@tms.test"],
                 [
                     'name' => "Tim Logistik ({$branch->name})",
+                    'username' => "tim_logistik.{$slug}",
                     'role_id' => $roles['tim_logistik']->id,
                     'branch_id' => $branch->id,
                     'sso_id' => "seed-tim_logistik-{$slug}",
@@ -117,6 +119,7 @@ class DatabaseSeeder extends Seeder
                 ['email' => "kepala_pool.{$slug}@tms.test"],
                 [
                     'name' => "Kepala Pool ({$branch->name})",
+                    'username' => "kepala_pool.{$slug}",
                     'role_id' => $roles['kepala_pool']->id,
                     'branch_id' => $branch->id,
                     'sso_id' => "seed-kepala_pool-{$slug}",
@@ -137,6 +140,7 @@ class DatabaseSeeder extends Seeder
                 ['email' => "fleet_operations.{$slug}@tms.test"],
                 [
                     'name' => "Fleet Operations ({$branch->name})",
+                    'username' => "fleet_operations.{$slug}",
                     'role_id' => $roles['fleet_operations']->id,
                     'branch_id' => $branch->id,
                     'sso_id' => "seed-fleet_operations-{$slug}",
@@ -153,6 +157,7 @@ class DatabaseSeeder extends Seeder
                 ['email' => "{$roleName}@tms.test"],
                 [
                     'name' => ucwords(str_replace('_', ' ', $roleName)),
+                    'username' => $roleName,
                     'role_id' => $roles[$roleName]->id,
                     'branch_id' => $branchJkt->id,
                     'sso_id' => "seed-{$roleName}",
@@ -168,6 +173,7 @@ class DatabaseSeeder extends Seeder
             ['email' => 'logistik_ho@tms.test'],
             [
                 'name' => 'Logistik HO',
+                'username' => 'logistik_ho',
                 'role_id' => $roles['logistik_ho']->id,
                 'branch_id' => $branchJkt->id,
                 'sso_id' => 'seed-logistik_ho',

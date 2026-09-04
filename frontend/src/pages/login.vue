@@ -7,18 +7,19 @@
   import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
   import { useAuthStore } from '@/stores/auth'
 
-  // Login kredensial TMS (email+password) — jalur utama, dibutuhkan karena
-  // tidak semua pengguna cabang punya akun SYOP untuk SSO (Architecture
-  // Document Bagian 3.3 & 7.1 — SSO tetap jadi rencana jangka panjang begitu
-  // tersedia). Pemilih "pengguna contoh" di bawah murni kemudahan
-  // pengembangan/demo — hanya muncul bila DevAuthController aktif
-  // (local/testing), tidak pernah di production.
+  // Login kredensial TMS (username+password) — jalur utama, dibutuhkan
+  // karena tidak semua pengguna cabang punya akun SYOP untuk SSO
+  // (Architecture Document Bagian 3.3 & 7.1). Username, bukan email — lihat
+  // catatan di api/auth.js. Pemilih "pengguna contoh" di bawah murni
+  // kemudahan pengembangan/demo — hanya muncul bila DevAuthController aktif
+  // (local/testing), tidak pernah di production (dan tetap pakai email,
+  // bukan username — jalur terpisah dari login kredensial ini).
   const auth = useAuthStore()
   const router = useRouter()
   const route = useRoute()
   const { t } = useI18n()
 
-  const email = ref('')
+  const username = ref('')
   const password = ref('')
   const showPassword = ref(false)
   const loading = ref(false)
@@ -54,11 +55,11 @@
   }
 
   async function login () {
-    if (!email.value || !password.value) return
+    if (!username.value || !password.value) return
     loading.value = true
     errorMessage.value = null
     try {
-      const { data } = await authApi.login(email.value, password.value)
+      const { data } = await authApi.login(username.value, password.value)
       auth.setSession(data.data.token, data.data.user)
       redirectAfterLogin()
     } catch (error) {
@@ -116,13 +117,12 @@
                 </v-alert>
 
                 <v-text-field
-                  v-model="email"
+                  v-model="username"
                   autocomplete="username"
                   class="mb-2"
-                  :label="t('login.email')"
-                  prepend-inner-icon="mdi-email-outline"
+                  :label="t('login.username')"
+                  prepend-inner-icon="mdi-account-outline"
                   rounded="lg"
-                  type="email"
                   variant="outlined"
                   @keyup.enter="login"
                 />
@@ -144,7 +144,7 @@
                   block
                   class="mt-2 login-submit-btn"
                   color="primary"
-                  :disabled="!email || !password"
+                  :disabled="!username || !password"
                   :loading="loading"
                   rounded="lg"
                   size="large"

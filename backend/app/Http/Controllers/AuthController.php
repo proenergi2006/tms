@@ -8,36 +8,40 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Login kredensial TMS (email + password) — jalur utama sebelum SSO
+ * Login kredensial TMS (username + password) — jalur utama sebelum SSO
  * tersedia, dan tetap dibutuhkan SETELAHNYA untuk pengguna yang tidak
  * punya akun SYOP (mis. sebagian driver/mekanik cabang). Berbeda dari
  * DevAuthController (login tanpa password, hanya aktif di local/testing
  * untuk kebutuhan pengembangan) — controller ini aktif di semua environment.
+ *
+ * Dicocokkan lewat `username`, BUKAN `email` — lihat catatan di
+ * App\Models\User::$fillable. SSO (SsoController) tetap pakai email,
+ * jalur ini tidak menyentuhnya sama sekali.
  */
 class AuthController extends Controller
 {
     public function login(Request $request)
     {
         $request->validate([
-            'email' => ['required', 'email'],
+            'username' => ['required', 'string'],
             'password' => ['required', 'string'],
         ]);
 
         $user = User::with(['role.permissions', 'branch'])
-            ->where('email', $request->input('email'))
+            ->where('username', $request->input('username'))
             ->first();
 
-        // Pesan generik (tidak membedakan "email tidak ada" vs "password
-        // salah") supaya tidak bisa dipakai untuk menebak email terdaftar.
+        // Pesan generik (tidak membedakan "username tidak ada" vs "password
+        // salah") supaya tidak bisa dipakai untuk menebak username terdaftar.
         if (! $user || ! $user->password || ! Hash::check($request->input('password'), $user->password)) {
             throw ValidationException::withMessages([
-                'email' => 'Email atau password salah.',
+                'username' => 'Username atau password salah.',
             ]);
         }
 
         if ($user->status !== 'aktif') {
             throw ValidationException::withMessages([
-                'email' => 'Akun ini sudah tidak aktif. Hubungi Admin Sistem.',
+                'username' => 'Akun ini sudah tidak aktif. Hubungi Admin Sistem.',
             ]);
         }
 
@@ -49,6 +53,7 @@ class AuthController extends Controller
                 'user' => [
                     'id' => $user->id,
                     'name' => $user->name,
+                    'username' => $user->username,
                     'email' => $user->email,
                     'role' => $user->role ? ['id' => $user->role->id, 'name' => $user->role->name] : null,
                     'branch' => $user->branch ? ['id' => $user->branch->id, 'name' => $user->branch->name] : null,

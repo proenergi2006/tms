@@ -5,6 +5,7 @@ namespace App\Modules\MasterData\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -23,6 +24,7 @@ class UserController extends Controller
             ->when($request->string('search')->trim()->isNotEmpty(), fn ($query) => $query->where(
                 fn ($q) => $q->where('name', 'like', '%'.$request->string('search')->trim().'%')
                     ->orWhere('email', 'like', '%'.$request->string('search')->trim().'%')
+                    ->orWhere('username', 'like', '%'.$request->string('search')->trim().'%')
             ))
             ->when($request->filled('role_id'), fn ($query) => $query->where('role_id', $request->integer('role_id')))
             ->when($request->filled('branch_id'), fn ($query) => $query->where('branch_id', $request->integer('branch_id')))
@@ -69,10 +71,16 @@ class UserController extends Controller
         // Soft delete (users pakai SoftDeletes supaya riwayat yang merujuk
         // user ini — requests.requested_by, approval_logs.approver_user_id,
         // keduanya restrictOnDelete — tetap utuh) tidak otomatis
-        // membebaskan email karena unique constraint di kolom email berlaku
-        // untuk semua baris termasuk yang sudah soft-deleted. Mangle email
-        // di sini supaya alamat yang sama bisa dipakai lagi untuk akun baru.
-        $user->update(['email' => "deleted-{$user->id}-{$user->email}"]);
+        // membebaskan email/username karena unique constraint keduanya
+        // berlaku untuk semua baris termasuk yang sudah soft-deleted. Mangle
+        // di sini supaya alamat/username yang sama bisa dipakai lagi untuk
+        // akun baru — username dibatasi VARCHAR(50), jadi mangle-nya TIDAK
+        // menyisipkan username asli mentah-mentah (bisa kepanjangan &
+        // terpotong DB), cukup id + random unik.
+        $user->update([
+            'email' => "deleted-{$user->id}-{$user->email}",
+            'username' => "deleted-{$user->id}-".Str::random(8),
+        ]);
         $user->delete();
 
         return response()->noContent();
@@ -82,6 +90,14 @@ class UserController extends Controller
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:100'],
+            // alpha_dash bawaan Laravel TIDAK mengizinkan titik, padahal
+            // pola username di app ini pakai titik (mis. "sa.jkt",
+            // "kepala_pool.jkt", lihat DatabaseSeeder) — regex manual
+            // sebagai gantinya: huruf/angka/titik/underscore/dash saja.
+            'username' => [
+                'required', 'string', 'max:50', 'regex:/^[a-zA-Z0-9._-]+$/',
+                Rule::unique('users', 'username')->ignore($user?->id),
+            ],
             'email' => [
                 'required', 'email', 'max:150',
                 Rule::unique('users', 'email')->ignore($user?->id),
@@ -106,6 +122,7 @@ class UserController extends Controller
         return [
             'id' => $user->id,
             'name' => $user->name,
+            'username' => $user->username,
             'email' => $user->email,
             'role' => $user->role ? ['id' => $user->role->id, 'name' => $user->role->name] : null,
             'branch' => $user->branch ? ['id' => $user->branch->id, 'name' => $user->branch->name] : null,

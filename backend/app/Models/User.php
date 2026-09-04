@@ -32,17 +32,21 @@ class User extends Authenticatable
     private const GLOBAL_ROLES = ['admin_it_ga', 'admin_sistem', 'manajemen', 'logistik_ho'];
 
     /**
-     * Autentikasi TMS direncanakan via SSO (lihat Architecture Document
-     * Bagian 7.1) begitu tersedia, TAPI tidak seluruh pengguna (mis. driver/
-     * mekanik cabang) punya akun SYOP untuk SSO — jadi TMS tetap punya jalur
-     * login kredensial sendiri (email+password, lihat AuthController) sebagai
-     * jalur utama, bukan cuma stopgap DevAuthController.
-     *
-     * @var list<string>
+     * Autentikasi TMS: dua jalur berdampingan, masing-masing pakai
+     * identifier beda (AuthController vs SsoController).
+     * - Login manual (email+password): dicocokkan lewat `username`, bukan
+     *   `email` — supaya orang yang perlu banyak akun (1 orang pegang
+     *   Kepala Pool di beberapa cabang) tidak harus ketik email lengkap
+     *   tiap akun, cukup username pendek (mis. "ridho.jkt").
+     * - SSO dari SYOP (lihat SsoController): tetap dicocokkan lewat
+     *   `email`, TIDAK berubah — payload SSO cuma kirim email, bukan
+     *   username, dan email tetap unik per akun supaya SSO tidak ambigu
+     *   kalau satu orang punya beberapa akun.
      */
     protected $fillable = [
         'name',
         'email',
+        'username',
         'sso_id',
         'password',
         'role_id',
