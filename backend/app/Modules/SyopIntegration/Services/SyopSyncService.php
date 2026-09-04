@@ -78,11 +78,17 @@ class SyopSyncService
 
         $synced = 0;
         foreach ($eligible as $row) {
+            // 'phone' SENGAJA tidak diisi di sini — SYOP tidak punya data
+            // nomor telepon sopir sama sekali (lihat catatan di
+            // SyopNativeAdapter::getEligibleDrivers()). Kalau field ini
+            // dipaksa null tiap sync, nomor yang sudah diisi manual lewat
+            // Master Data TMS akan ke-timpa kosong lagi tiap jam — dengan
+            // tidak menyertakan key ini, updateOrCreate() membiarkan nilai
+            // phone yang sudah ada tetap utuh saat update.
             Driver::updateOrCreate(
                 ['syop_driver_id' => $row->syop_id],
                 [
                     'name' => $row->name,
-                    'phone' => $row->phone,
                     'branch_id' => $branch->id,
                     'status' => 'aktif',
                 ]

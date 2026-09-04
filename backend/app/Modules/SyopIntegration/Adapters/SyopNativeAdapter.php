@@ -43,13 +43,18 @@ class SyopNativeAdapter implements SyopDataProviderInterface
 
     public function getMasterDriver(): Collection
     {
+        // pro_master_transportir_sopir TIDAK punya kolom nomor telepon sama
+        // sekali di skema production (dikonfirmasi langsung: id_master,
+        // id_transportir, nama_sopir, photo, photo_ori, is_active) — beda
+        // dari asumsi awal (no_telepon). Field phone di TMS tetap nullable,
+        // jadi dibiarkan kosong dari SYOP, bisa diisi manual lewat Master
+        // Data kalau perlu.
         return $this->connection()
             ->table('pro_master_transportir_sopir')
             ->select([
                 'id_master as syop_id',
                 'id_transportir as syop_transportir_id',
                 'nama_sopir as name',
-                'no_telepon as phone',
                 'is_active',
             ])
             ->get();
@@ -111,7 +116,6 @@ class SyopNativeAdapter implements SyopDataProviderInterface
             ->select([
                 's.id_master as syop_id',
                 's.nama_sopir as name',
-                's.no_telepon as phone',
                 't.nama_transportir as transportir_name',
                 't.lokasi_suplier as location',
             ])
