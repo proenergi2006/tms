@@ -2,15 +2,22 @@
 
 namespace App\Services;
 
+use App\Mail\AppNotificationMail;
 use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Throwable;
 
 /**
  * Pengiriman notifikasi in-app (FR-11, FR-17 — PRD Bagian 6; Architecture
- * Document Bagian 4.5). Dipakai oleh ApprovalWorkflowService/RequestController
- * (notifikasi approval tertunda, event-driven) dan
- * CheckFleetLegalExpiry (notifikasi legalitas jatuh tempo, terjadwal).
+ * Document Bagian 4.5) SEKALIGUS email — pengguna (terutama approver yang
+ * tidak standby di aplikasi) perlu tahu ada pengajuan/approval tertunda
+ * tanpa harus buka TMS duluan, notifikasi in-app saja tidak cukup untuk itu.
+ * Dipakai oleh ApprovalWorkflowService/RequestController (notifikasi
+ * approval tertunda, event-driven) dan CheckFleetLegalExpiry dkk
+ * (notifikasi terjadwal, mis. legalitas jatuh tempo).
  */
 class NotificationService
 {
@@ -64,6 +71,33 @@ class NotificationService
             'message' => $message,
             'is_read' => false,
         ]);
+
+        $this->sendEmail($user, $message);
+    }
+
+    /**
+     * Best-effort SENGAJA — SMTP down/salah konfigurasi tidak boleh
+     * menggagalkan notifikasi in-app (yang sudah tersimpan di atas) atau
+     * aksi yang memicunya (approve/reject WO dst). Bukan queued job
+     * (QUEUE_CONNECTION=database ada, tapi tidak ada worker/proses
+     * queue:work berjalan di setup Docker sekarang — job queued akan
+     * menumpuk di tabel jobs tanpa pernah terkirim kalau dipaksa queue).
+     */
+    private function sendEmail(User $user, string $message): void
+    {
+        if (! $user->email) {
+            return;
+        }
+
+        try {
+            Mail::to($user->email)->send(new AppNotificationMail(
+                userName: $user->name,
+                notificationMessage: $message,
+                actionUrl: rtrim((string) config('app.url'), '/').'/notifications',
+            ));
+        } catch (Throwable $e) {
+            Log::warning("Gagal kirim email notifikasi ke {$user->email}: {$e->getMessage()}");
+        }
     }
 
     /**
