@@ -1,115 +1,140 @@
 # Panduan Pengguna — Transport Management System (TMS)
 
-Dokumen ini menjelaskan cara memakai aplikasi TMS dari awal (login) sampai alur kerja harian, per peran pengguna. Untuk detail teknis (API, skema DB, arsitektur), lihat dokumen lain di [README](README.md).
+Dokumen ini menjelaskan cara memakai aplikasi TMS dari awal (login) sampai alur kerja harian, per peran pengguna. Ditulis untuk pengguna sehari-hari (bukan dokumen teknis) — istilah teknis sengaja dihindari.
+
+> **Catatan untuk pembuat dokumen:** tempat yang ditandai **[SCREENSHOT: ...]** perlu diisi gambar tangkapan layar sebelum dikirim ke pengguna.
 
 ## 1. Masuk ke Aplikasi
 
-1. Buka alamat aplikasi di browser (mis. `http://localhost:5183` untuk lingkungan pengembangan lokal).
-2. Anda akan diarahkan ke halaman **Login**.
-3. Pilih nama Anda pada dropdown **"Pilih pengguna"**, lalu klik **Masuk**.
+Ada dua cara masuk ke TMS, tergantung apakah Anda punya akun SYOP atau tidak.
 
-> Catatan: saat ini login masih memakai mekanisme sementara (pilih user langsung, tanpa password) sampai integrasi SSO/Identity Provider bersama SYOP v4 tersedia. Setiap user sudah mewakili satu peran (role) tertentu yang menentukan menu dan aksi apa saja yang bisa diakses.
+### 1.1 Login lewat SYOP (SSO) — cara tercepat, kalau tersedia
 
-Setelah login, Anda akan diarahkan ke salah satu dari dua tampilan berikut, tergantung peran:
+Kalau akun Anda sudah terhubung dengan SYOP, cukup klik menu **"TMS"** dari dalam aplikasi SYOP yang biasa Anda pakai — Anda akan langsung masuk ke TMS tanpa perlu mengetik apa pun lagi.
 
-- **Driver / Mekanik** → **Aplikasi Lapangan** (tampilan ringan, satu kolom, cocok untuk HP).
-- **Peran lainnya** (Kepala Pool, BM, Tim Logistik, Finance, Admin IT & GA, Admin Sistem, Manajemen) → **Panel Admin** (dashboard lengkap dengan sidebar menu).
+**[SCREENSHOT: menu "TMS" di aplikasi SYOP]**
+
+### 1.2 Login manual (Username & Password)
+
+Kalau Anda belum terhubung SYOP, atau lebih suka login langsung:
+
+1. Buka alamat TMS di browser.
+2. Di halaman **Login**, isi **Username** dan **Password** Anda.
+3. Klik **Masuk**.
+
+**[SCREENSHOT: halaman login TMS]**
+
+> Username dan password Anda diberikan oleh Admin Sistem saat akun dibuatkan. Kalau lupa password, hubungi Admin Sistem — jangan mencoba menebak, ada batas percobaan login per beberapa menit.
 
 ### Keluar (Logout)
 
-- **Panel Admin**: klik nama Anda di pojok kanan atas → pilih **Keluar**.
-- **Aplikasi Lapangan**: klik ikon logout (⏻) di pojok kanan atas top bar.
+Klik nama Anda di pojok kanan atas topbar → pilih **Keluar**.
+
+**[SCREENSHOT: menu dropdown nama pengguna dengan opsi Keluar]**
 
 ### Struktur Cabang
 
-PT Pro Energi memiliki 7 cabang operasional: **Jakarta, Surabaya, Samarinda, Sulawesi, Palembang, Pontianak, Banjarmasin**. Setiap cabang punya tim sendiri (Driver, Mekanik, Kepala Pool, BM, Tim Logistik), sedangkan **Admin IT & GA, Finance, Admin Sistem, dan Manajemen** berkantor di Head Office dan bekerja lintas-cabang.
+PT Pro Energi memiliki 7 cabang operasional: **Jakarta, Surabaya, Samarinda, Sulawesi, Palembang, Pontianak, Banjarmasin**. Setiap cabang punya tim sendiri (Service Advisor, Fleet Operations, Kepala Pool, Tim Logistik, Admin Logistik), sedangkan **Admin IT & GA, Admin Sistem, Manajemen, dan Logistik HO** berkantor di Head Office dan bekerja lintas-cabang.
 
 Konsekuensinya di aplikasi:
-- Driver/Mekanik/Kepala Pool/BM/Tim Logistik **hanya melihat & mengelola data cabangnya sendiri** — dropdown armada, daftar pengajuan, antrian approval, dan Master Data (Driver/Mekanik/Gudang) otomatis tersaring ke cabang Anda. Field "Cabang" pada form Tambah/Ubah otomatis terkunci ke cabang Anda.
-- Admin IT & GA, Finance, Admin Sistem, dan Manajemen tetap melihat & bisa memilih cabang mana pun.
-- Approval **hanya bisa dilakukan oleh Kepala Pool/BM/Tim Logistik di cabang yang sama** dengan armada/pengajuan tersebut — mencegah, misalnya, Kepala Pool Jakarta menyetujui pengajuan cabang Samarinda.
+- Pengguna cabang (SA, Fleet Operations, Kepala Pool, Tim Logistik, Admin Logistik) **hanya melihat & mengelola data cabangnya sendiri** — dropdown armada, daftar pengajuan, antrian approval, dan Master Data otomatis tersaring ke cabang Anda. Field "Cabang" pada form Tambah/Ubah otomatis terkunci ke cabang Anda.
+- Admin IT & GA, Admin Sistem, Manajemen, dan Logistik HO melihat data **seluruh cabang** sekaligus.
+- Approval **hanya bisa dilakukan oleh Fleet Operations/Kepala Pool di cabang yang sama** dengan armada/pengajuan tersebut — mencegah, misalnya, Kepala Pool Jakarta menyetujui pengajuan cabang Samarinda.
+- Kalau satu orang memegang jabatan yang sama di lebih dari satu cabang (mis. Kepala Pool merangkap 2 cabang), dia akan punya **lebih dari satu akun** — satu akun per cabang. Login-nya beda username tergantung cabang mana yang mau diproses.
 
-## 2. Aplikasi Lapangan (Driver & Mekanik)
+## 2. Peran & Menu yang Bisa Diakses
 
-Ditujukan untuk dipakai di lapangan lewat HP. Menu utama:
+Sidebar kiri hanya menampilkan menu yang sesuai hak akses peran Anda — kalau suatu menu tidak muncul, itu wajar (bukan error), berarti peran Anda memang tidak diberi akses ke situ.
 
-| Halaman | Fungsi |
-|---|---|
-| **Pengajuan Saya** | Daftar semua pengajuan yang pernah Anda buat, beserta statusnya. |
-| **Buat Pengajuan** (tombol `+`) | Ajukan permintaan perbaikan, sparepart, restock, pembelian, atau lainnya — pilih jenis, armada (opsional), deskripsi, dan lampirkan foto pendukung bila perlu. |
-| **Status SPK** | Buka dari daftar Pengajuan Saya (jika sudah ada Work Order) untuk melihat progres approval dan status pengerjaan. |
-| **Notifikasi** | Pemberitahuan terkait pengajuan Anda (disetujui/ditolak/selesai). |
+| Peran | Deskripsi Singkat | Menu yang Bisa Diakses |
+|---|---|---|
+| **Service Advisor (SA)** | Ujung tombak cabang — satu-satunya yang membuat pengajuan, sekaligus yang mengerjakannya sampai selesai. | Dashboard, Pengajuan (buat & kelola milik sendiri), Armada (lihat), Master Data (lihat), Notifikasi |
+| **Fleet Operations** | Verifikator tahap pertama di cabang. | Dashboard, Pengajuan (lihat, bisa edit selama giliran verifikasinya), Antrian Approval (verifikasi/tolak tahap 1), Armada (lihat), Master Data (lihat + kelola sparepart), Laporan Profitabilitas, Notifikasi |
+| **Kepala Pool** | Approver tahap akhir di cabang. | Dashboard, Pengajuan (lihat), Antrian Approval (approve/tolak tahap akhir), Armada (lihat), Master Data (lihat), Notifikasi |
+| **Tim Logistik** | Pengelola data master operasional cabang (kecuali sparepart & cabang). | Dashboard, Pengajuan (lihat), Armada (lihat & kelola riwayat/legalitas/BBM), Master Data (kelola driver/mekanik/vendor/gudang/jenis biaya/jenis pekerjaan), Laporan Profitabilitas, Notifikasi |
+| **Admin Logistik** | Pengelola stok sparepart cabang — **hanya** sparepart. | Dashboard, Pengajuan (lihat), Armada (lihat), Master Data (lihat semua + **kelola penuh sparepart**), Laporan Profitabilitas, Notifikasi |
+| **Logistik HO** | Pemantau lintas cabang dari Head Office — murni lihat-lihat, tanpa wewenang apa pun untuk mengubah. | Dashboard, Pengajuan (lihat semua cabang), Armada (lihat semua cabang), Master Data (lihat semua cabang), Laporan Profitabilitas, Notifikasi |
+| **Admin IT & GA** | Pengelola aset IT/GA. | Dashboard, Asset Registry (kelola penuh), Notifikasi |
+| **Manajemen** | Pemantau kinerja operasional & finansial. | Dashboard, Pengajuan (lihat), Armada (lihat), Master Data (lihat), Laporan Profitabilitas, Asset Registry (lihat), Notifikasi |
+| **Admin Sistem** | Administrator sistem — akses penuh ke semua menu. | Semua menu di atas, ditambah: **Role & Permission**, **Manajemen User**, **Tahapan Approval**, **Audit Log**, **Log Sistem**, dan kelola Cabang di Master Data |
 
-### Alur untuk Driver
-1. Tekan **+** di Pengajuan Saya → isi form → **Kirim Pengajuan**.
-2. Pantau status di **Pengajuan Saya** atau lewat notifikasi (bell icon).
+**[SCREENSHOT: sidebar menu — bisa ambil dari 2-3 role berbeda untuk menunjukkan perbedaannya, mis. SA vs Admin Sistem]**
 
-### Alur untuk Mekanik
-Selain bisa membuat pengajuan seperti Driver, Mekanik juga bertugas mengeksekusi Work Order yang sudah lolos approval:
-1. Buka **Status SPK** pada Work Order yang sudah ditugaskan ke Anda.
-2. Setelah status approval mencapai *Finance Approved* (atau *Completed* untuk kasus tanpa approval Finance), tombol status pelaksanaan akan aktif:
-   - **Mulai Kerjakan (On Progress)** — saat mulai bekerja.
-   - **Tandai Selesai (Finished)** — saat pekerjaan selesai.
+## 3. Alur Kerja Utama: Pengajuan → Work Order → Selesai
 
-## 3. Panel Admin — Menu per Peran
-
-Sidebar kiri hanya menampilkan menu yang sesuai hak akses (permission) peran Anda. Berikut ringkasan menu dan siapa saja yang bisa mengaksesnya:
-
-| Menu | Fungsi Singkat | Bisa Diakses (Lihat) | Bisa Kelola |
-|---|---|---|---|
-| **Dashboard** | KPI ringkas: total pengajuan, approval tertunda, legalitas mendekati jatuh tempo, profit bulan berjalan, grafik profit/loss per armada. | Semua peran (data ditampilkan sesuai hak akses) | — |
-| **Pengajuan** | Daftar & detail pengajuan servis/sparepart/dll. | Driver, Mekanik, Kepala Pool, BM, Tim Logistik, Finance, Manajemen | Driver, Mekanik, Kepala Pool, Tim Logistik (buat pengajuan baru) |
-| **Antrian Approval** | Menyetujui/menolak Work Order sesuai tahap approval Anda. | Kepala Pool, BM, Tim Logistik, Finance | idem (approve/reject) |
-| **Aturan Approval** | Atur ambang biaya yang memerlukan approval Finance. | Admin Sistem | Admin Sistem |
-| **Armada** | Daftar & detail armada (riwayat servis, legalitas, BBM, biaya, profit-loss). | Kepala Pool, BM, Tim Logistik, Finance, Manajemen | Tim Logistik, Admin Sistem (tambah/ubah armada) |
-| **Master Data** | Data referensi: Cabang, Driver, Mekanik, Vendor/Bengkel, Gudang, Sparepart, Jenis Biaya, Jenis Pekerjaan. | Hampir semua peran (lihat) | Tim Logistik, Admin Sistem (tambah/ubah/hapus) |
-| **Laporan Profitabilitas** | Laporan profit/loss seluruh armada, bisa diekspor `.xlsx`. | Tim Logistik, Finance, Manajemen | — |
-| **Asset Registry** | Aset IT/GA (komputer, printer, dsb). | Admin IT & GA, Manajemen | Admin IT & GA (tambah/ubah/hapus) |
-| **Notifikasi** | Riwayat notifikasi pribadi, tandai sudah dibaca. | Semua peran | — |
-| **Audit Log** | Jejak perubahan approval (siapa mengubah apa, kapan). | Admin Sistem | — |
-
-## 4. Alur Kerja Utama: Pengajuan → Work Order → Selesai
-
-Ini adalah proses inti aplikasi, dari pengajuan sampai pekerjaan selesai dan tercatat di laporan.
+Ini proses inti aplikasi, dari pengajuan sampai pekerjaan selesai dan otomatis masuk laporan.
 
 ```mermaid
 flowchart LR
-    A[Driver/Mekanik/Kepala Pool/\nTim Logistik buat Pengajuan] --> B[Work Order otomatis dibuat]
-    B --> C{Approval berjenjang}
-    C --> D[1. Kepala Pool]
-    D --> E[2. BM]
-    E --> F[3. Tim Logistik]
-    F -->|biaya >= ambang aturan| G[4. Finance]
-    F -->|biaya < ambang aturan| H[Lolos approval]
-    G --> H
-    H --> I[Tim Logistik tetapkan\npelaksana + rincian biaya]
-    I --> J[Mekanik/Vendor kerjakan:\nWaiting → On Progress → Finished]
-    J --> K[Riwayat servis & biaya operasional\ntercatat otomatis]
-    K --> L[Muncul di Laporan Profitabilitas]
+    A[SA buat Pengajuan] --> B[Work Order otomatis dibuat bersamaan]
+    B --> C[Verifikasi tahap 1:\nFleet Operations]
+    C -->|tolak| X[Berhenti, SA dapat notifikasi]
+    C -->|lolos| D[Approval tahap 2:\nKepala Pool]
+    D -->|tolak| X
+    D -->|lolos| E[SA jalankan pekerjaan:\nWaiting -> On Progress]
+    E --> F[SA realisasi sparepart\nyang benar-benar terpakai]
+    F --> G[SA tandai Finished]
+    G --> H[Riwayat & biaya operasional\ntercatat otomatis]
+    H --> I[Muncul di Laporan Profitabilitas]
 ```
 
 Langkah-langkah:
 
-1. **Buat Pengajuan** — Driver, Mekanik, Kepala Pool, atau Tim Logistik mengajukan lewat aplikasi lapangan atau menu **Pengajuan** (jika punya akses). Sistem otomatis membuat **Work Order** pendamping di baliknya.
-2. **Approval berjenjang** — dilihat & disetujui/ditolak lewat menu **Antrian Approval**, berurutan:
-   - Kepala Pool → BM → Tim Logistik → (Finance, hanya jika total biaya mencapai ambang yang diatur di **Aturan Approval**).
-   - Jika ditolak di tahap manapun, pengajuan berhenti dan pengaju dapat notifikasi.
-3. **Tetapkan Pelaksana** — di halaman **Detail Work Order**, Tim Logistik memilih pelaksana (mekanik internal atau vendor/bengkel eksternal) dan menambahkan rincian biaya (item pekerjaan/sparepart). Ini bisa dilakukan sebelum approval selesai, agar total biaya sudah diketahui saat menentukan apakah perlu approval Finance.
-4. **Lampiran** — foto/dokumen pendukung dari pengajuan otomatis tampil di Detail Work Order; pelaksana bisa menambah lampiran lain (foto progres, invoice vendor, dsb) selama pekerjaan berlangsung.
-5. **Eksekusi** — setelah approval lolos, Mekanik/Tim Logistik mengubah status pelaksanaan lewat tombol di Detail Work Order/Status SPK: **Waiting → On Progress → Finished**.
-6. **Selesai otomatis tercatat** — begitu status jadi *Finished* dan approval *Completed*, sistem otomatis mencatat riwayat perawatan armada dan biaya operasional — langsung terlihat di tab **Riwayat**/**Biaya** pada Detail Armada dan di **Laporan Profitabilitas**.
+1. **Buat Pengajuan** — SA membuka menu **Pengajuan** → **Tambah** → isi jenis (perbaikan/sparepart/restock/pembelian/lainnya), armada terkait (kalau ada), diagnosa, prioritas, estimasi lama perbaikan, pelaksana (mekanik internal atau vendor eksternal), dan lampirkan foto pendukung bila perlu. **Work Order otomatis dibuat bersamaan** — tidak perlu langkah terpisah.
+
+   **[SCREENSHOT: form Tambah Pengajuan]**
+
+2. **Verifikasi tahap 1 — Fleet Operations** — dibuka lewat menu **Antrian Approval**. Fleet Operations bisa **mengedit** pengajuan (mis. mengoreksi estimasi) atau **menolak** dengan alasan. Kalau ditolak, SA dapat notifikasi dan proses berhenti di situ.
+
+   **[SCREENSHOT: halaman Antrian Approval]**
+
+3. **Approval tahap 2 — Kepala Pool** — approval akhir. Sama seperti Fleet Operations, bisa menolak dengan alasan.
+
+4. **Eksekusi oleh SA** — setelah lolos kedua tahap, SA membuka **Detail Work Order** dan mengubah status pelaksanaan: **Waiting → On Progress**.
+
+   **[SCREENSHOT: Detail Work Order, tombol ubah status]**
+
+5. **Realisasi Sparepart** — sebelum bisa menandai pekerjaan selesai, SA **wajib** mengisi sparepart yang benar-benar terpakai (boleh beda dari rencana awal). Ini titik satu-satunya stok gudang berkurang, dan **hanya untuk pelaksanaan internal** — kalau pelaksananya vendor eksternal, sparepart vendor dicatat sebagai catatan teks biasa, tidak memotong stok TMS.
+
+   **[SCREENSHOT: form Realisasi Sparepart]**
+
+6. **Tandai Selesai** — status Work Order menjadi **Finished**. Biaya (termasuk dari vendor eksternal) otomatis tercatat sebagai biaya operasional, dan riwayat pekerjaan otomatis muncul di tab **Riwayat** pada Detail Armada — tidak ada langkah tambahan yang perlu dilakukan siapa pun setelah ini.
+
+   **[SCREENSHOT: Detail Armada, tab Riwayat menampilkan pekerjaan yang baru selesai]**
+
+## 4. Master Data
+
+Menu **Master Data** berisi data referensi yang dipakai di seluruh aplikasi (Cabang, Driver, Mekanik, Vendor/Bengkel, Gudang, Sparepart, Jenis Biaya, Jenis Pekerjaan). Siapa boleh mengubah apa **berbeda-beda per jenis data**:
+
+| Jenis Data | Siapa Boleh Lihat | Siapa Boleh Tambah/Ubah/Hapus |
+|---|---|---|
+| **Cabang** | Semua peran cabang + Head Office | **Hanya Admin Sistem** |
+| **Sparepart** | Semua peran cabang + Head Office | Tim Logistik, Fleet Operations, **Admin Logistik** |
+| Driver, Mekanik, Vendor, Gudang, Jenis Biaya, Jenis Pekerjaan | Semua peran cabang + Head Office | Tim Logistik, Fleet Operations |
+
+**[SCREENSHOT: halaman Master Data, tab Sparepart]**
+
+Sebagian data Master (Driver, Armada) juga **otomatis tersinkron dari SYOP setiap jam** — jadi tidak perlu diinput manual dua kali kalau sudah ada di SYOP. Data yang memang tidak ada di SYOP (mis. nomor telepon driver) bisa dilengkapi manual kapan saja lewat Master Data, dan tidak akan tertimpa oleh sinkronisasi berikutnya.
 
 ## 5. Notifikasi
 
-Ikon lonceng di kanan atas (tersedia di kedua tampilan) menunjukkan jumlah notifikasi belum dibaca, dengan pembaruan otomatis setiap 60 detik. Notifikasi dikirim otomatis untuk:
-- **Approval tertunda** — ke role yang bertugas menyetujui tahap berikutnya, setiap kali Work Order dibuat atau naik ke tahap baru.
-- **Pengajuan ditolak/selesai** — ke pengaju.
-- **Dokumen legalitas armada mendekati jatuh tempo** (STNK, KIR, Pajak, Asuransi) — ke Tim Logistik, dikirim otomatis setiap hari.
+Ikon lonceng di kanan atas menunjukkan jumlah notifikasi belum dibaca, diperbarui otomatis setiap 60 detik. Notifikasi dikirim lewat **dua jalur sekaligus — di dalam aplikasi (bell icon) dan email** — untuk:
 
-Klik "Lihat Semua" pada dropdown lonceng untuk membuka halaman **Notifikasi** lengkap, dengan tab Semua/Belum Dibaca/Sudah Dibaca dan tombol "Tandai Semua Dibaca".
+- **Approval tertunda** — ke Fleet Operations/Kepala Pool yang bertugas, setiap kali ada pengajuan baru atau naik ke tahap berikutnya.
+- **Pengajuan ditolak/selesai** — ke SA yang membuat pengajuan.
+- **Dokumen legalitas armada mendekati jatuh tempo** (STNK, KIR, Pajak, Asuransi) — ke Tim Logistik, dikirim otomatis setiap hari.
+- **Servis berkala jatuh tempo, komponen (ban/aki/oli/rem) perlu diganti, dan stok sparepart di bawah ambang minimum** — ke role terkait di cabang masing-masing.
+
+**[SCREENSHOT: dropdown notifikasi bell icon]**
+
+**[SCREENSHOT: contoh email notifikasi yang masuk ke inbox]**
+
+Klik "Lihat Semua" pada dropdown lonceng untuk membuka halaman **Notifikasi** lengkap.
 
 ## 6. Tips Umum
 
-- Menu yang tidak muncul di sidebar bukan berarti error — itu artinya peran Anda tidak memiliki akses ke fitur tersebut (hak akses diatur granular per peran).
-- Data induk (Cabang, Driver, Mekanik, Vendor, dst.) sebaiknya dilengkapi lebih dulu oleh Tim Logistik/Admin Sistem lewat menu **Master Data** sebelum pengguna lain mulai membuat pengajuan, supaya pilihan dropdown (armada, mekanik, vendor, dll.) sudah tersedia.
-- Untuk melihat kesehatan legalitas seluruh armada (dokumen yang mendekati/lewat jatuh tempo), cek kartu **Peringatan Legalitas** di Dashboard atau tab **Legalitas** pada Detail Armada.
+- Menu yang tidak muncul di sidebar bukan berarti error — itu artinya peran Anda tidak memiliki akses ke fitur tersebut.
+- Lengkapi data induk (Driver, Mekanik, Vendor, Gudang, dst.) lebih dulu lewat **Master Data** sebelum mulai membuat pengajuan, supaya pilihan dropdown sudah tersedia.
+- Untuk melihat kesehatan legalitas seluruh armada, cek kartu **Peringatan Legalitas** di Dashboard atau tab **Legalitas** pada Detail Armada.
+- Kalau sesi Anda tiba-tiba diminta login ulang, itu wajar setelah beberapa lama tidak aktif atau setelah menutup browser — bukan berarti data Anda hilang.
+- Kalau punya lebih dari satu akun (misal jadi Kepala Pool di 2 cabang), pastikan Anda login dengan username yang sesuai cabang yang mau diproses.
