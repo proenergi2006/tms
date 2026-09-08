@@ -17,6 +17,10 @@
   const router = useRouter()
   const { t } = useI18n()
 
+  // Tombol "Kembali ke SYOP" (lihat template) — cuma tampil kalau sesi ini
+  // datang dari SSO (auth.ssoOrigin) DAN URL SYOP-nya memang dikonfigurasi.
+  const syopUrl = import.meta.env.VITE_SYOP_URL
+
   async function logout () {
     await auth.logout()
     router.push('/login')
@@ -149,6 +153,16 @@
     <v-app-bar>
       <v-app-bar-nav-icon @click="drawer = !drawer" />
       <v-spacer />
+
+      <v-btn
+        v-if="auth.ssoOrigin && syopUrl"
+        class="mr-2"
+        :href="syopUrl"
+        prepend-icon="mdi-arrow-left-circle-outline"
+        :text="t('nav.backToSyop')"
+        variant="text"
+      />
+
       <LanguageSwitcher />
       <NotificationMenu />
 

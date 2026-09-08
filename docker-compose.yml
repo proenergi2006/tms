@@ -5,7 +5,7 @@
 #
 # Sebelum "docker compose up -d --build":
 #   cp backend/.env.docker.example backend/.env   # lalu isi semua <ISI>
-#   cp .env.example .env                          # lalu isi NFS_ADDR/NFS_PATH/WEB_PORT
+#   cp .env.example .env                          # lalu isi NFS_ADDR/NFS_PATH/WEB_PORT/SYOP_URL
 #
 volumes:
   # Storage NFS shared (attachment upload dsb.) — persisten lintas rebuild
@@ -68,6 +68,7 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_BASE_URL: /api/v1
+        VITE_SYOP_URL: ${SYOP_URL}
     image: tms-frontend:latest
     restart: unless-stopped
     ports:

@@ -33,7 +33,7 @@
 
     try {
       const { data } = await ssoApi.login(token)
-      auth.setSession(data.data.token, data.data.user)
+      auth.setSession(data.data.token, data.data.user, { ssoOrigin: true })
       await router.replace('/')
     } catch (error) {
       hasError.value = true

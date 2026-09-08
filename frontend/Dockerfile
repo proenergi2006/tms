@@ -12,6 +12,12 @@ COPY . .
 # tahu domain production di sini, dan otomatis menghindari CORS.
 ARG VITE_API_BASE_URL=/api/v1
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+
+# URL SYOP v3 untuk tombol "Kembali ke SYOP" (cuma tampil untuk sesi SSO) —
+# kosong = tombolnya tidak pernah tampil, aman sebagai default.
+ARG VITE_SYOP_URL=
+ENV VITE_SYOP_URL=$VITE_SYOP_URL
+
 RUN npm run build
 
 FROM nginx:1.27-alpine

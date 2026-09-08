@@ -56,6 +56,7 @@ export default {
     appTitle: 'TMS',
     appSubtitle: 'Transport Management System',
     logout: 'Log Out',
+    backToSyop: 'Back to SYOP',
   },
   footer: {
     rights: 'All rights reserved.',
