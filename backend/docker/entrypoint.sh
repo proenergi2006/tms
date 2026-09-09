@@ -1,17 +1,39 @@
 #!/bin/sh
 set -e
 
-# Role dipilih lewat argumen container (docker-compose "command:"), bukan
-# image terpisah — "app" dan "scheduler" pakai image yang sama supaya tidak
-# ada drift antara kode yang jalan di dua tempat itu.
+cd /var/www/html
+
 ROLE="${1:-app}"
+
+CURRENT_COMPOSER_HASH="$(sha256sum composer.lock | awk '{print $1}')"
 
 case "$ROLE" in
   app)
-    # migrate --force aman dijalankan berulang tiap container start —
-    # Laravel skip migration yang sudah tercatat di tabel migrations, jadi
-    # idempotent selama tidak ada 2 container "app" start bersamaan (setup
-    # ini single-instance, bukan horizontally scaled).
+    INSTALLED_COMPOSER_HASH=""
+
+    if [ -f vendor/.composer-lock-hash ]; then
+      INSTALLED_COMPOSER_HASH="$(cat vendor/.composer-lock-hash)"
+    fi
+
+    if [ ! -f vendor/autoload.php ] || \
+       [ "$CURRENT_COMPOSER_HASH" != "$INSTALLED_COMPOSER_HASH" ]; then
+
+      echo "Composer dependencies belum tersedia atau berubah."
+      echo "Menjalankan composer install..."
+
+      COMPOSER_ALLOW_SUPERUSER=1 composer install \
+        --no-dev \
+        --prefer-dist \
+        --optimize-autoloader \
+        --no-interaction
+
+      echo "$CURRENT_COMPOSER_HASH" > vendor/.composer-lock-hash
+
+      echo "Composer dependencies siap."
+    else
+      echo "Composer dependencies tidak berubah."
+    fi
+
     php artisan migrate --force
     php artisan config:cache
     php artisan route:cache
@@ -20,18 +42,24 @@ case "$ROLE" in
 
     exec php-fpm
     ;;
+
   scheduler)
-    # Pengganti cron system di dalam container — pola resmi yang
-    # direkomendasikan Laravel untuk Docker (bukan install cron daemon).
-    # Enam scheduled command di routes/console.php (sync SYOP tiap jam,
-    # legal-expiry, inspection, service-due, low-stock, component-due)
-    # jalan lewat schedule:run ini.
+    echo "Menunggu Composer dependencies..."
+
+    until [ -f vendor/autoload.php ] \
+      && [ -f vendor/.composer-lock-hash ] \
+      && [ "$(cat vendor/.composer-lock-hash)" = "$CURRENT_COMPOSER_HASH" ]; do
+      sleep 2
+    done
+
     echo "Scheduler loop dimulai (schedule:run tiap 60 detik)."
+
     while true; do
       php artisan schedule:run --no-interaction --verbose 2>&1
       sleep 60
     done
     ;;
+
   *)
     exec "$@"
     ;;

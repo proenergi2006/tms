@@ -15,8 +15,8 @@ volumes:
     driver: local
     driver_opts:
       type: "nfs"
-      o: "addr=${NFS_ADDR},nfsvers=4.1,rw,hard,timeo=600"
-      device: ":${NFS_PATH}"
+      o: "addr=38.47.93.23,nfsvers=4.1,rw,hard,timeo=600"
+      device: ":/ProEnergi-DFS-X1U23-33276fd7/tms-live"
 
 services:
   app:
@@ -36,6 +36,7 @@ services:
       # "vendor/autoload.php not found". Kode aplikasi sudah "dibekukan" di
       # dalam image lewat COPY saat build — ganti kode = rebuild image, bukan
       # edit langsung folder host.
+      - ./backend:/var/www/html
       - tms_storage_nfs:/var/www/html/storage/app
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -53,6 +54,7 @@ services:
     env_file:
       - ./backend/.env
     volumes:
+      - ./backend:/var/www/html
       - tms_storage_nfs:/var/www/html/storage/app
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -72,7 +74,7 @@ services:
     image: tms-frontend:latest
     restart: unless-stopped
     ports:
-      - "${WEB_PORT}:80"
+      - "8150:80"
     depends_on:
       - app
     networks:

@@ -31,6 +31,13 @@ FROM php:8.2-fpm-alpine AS app
 COPY --from=composer:2.6 /usr/bin/composer /usr/bin/composer
 
 RUN apk add --no-cache \
+        bash \
+        git \
+        curl \
+        nano \
+        zip \
+        nodejs \
+        npm \
         libzip \
         libpng \
         libjpeg-turbo \
@@ -92,8 +99,6 @@ RUN composer dump-autoload --optimize --no-dev \
 COPY docker/entrypoint.sh /entrypoint.sh
 
 RUN chmod +x /entrypoint.sh
-
-USER www-data
 
 EXPOSE 9000
 
