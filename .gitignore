@@ -11,3 +11,6 @@
 # tetap di-track. Copy dari docker-compose.yml.example SEKALI di server,
 # lalu edit bebas di sana — git tidak akan pernah menyentuhnya lagi.
 docker-compose.yml
+
+*.bak
+backend/Dockerfile_backup

@@ -40,12 +40,18 @@ services:
     env_file:
       - ./backend/.env
     volumes:
-      # SENGAJA TIDAK ada bind-mount "./backend:/var/www/html" di sini — itu
+      # ./backend:/var/www/html — live-mount kode host ke container, supaya
+      # ganti kode (git pull di host) tidak perlu rebuild image penuh.
+      # SEBELUMNYA ini bikin error "vendor/autoload.php not found" (bind-mount
       # menimpa vendor/ hasil build image dengan folder host yang tidak
-      # punya vendor/ sama sekali (vendor/ di-gitignore), menyebabkan error
-      # "vendor/autoload.php not found". Kode aplikasi sudah "dibekukan" di
-      # dalam image lewat COPY saat build — ganti kode = rebuild image, bukan
-      # edit langsung folder host.
+      # punya vendor/ sama sekali, vendor/ di-gitignore) — sekarang aman
+      # karena docker/entrypoint.sh mendeteksi vendor/composer.lock berubah
+      # dan otomatis composer install ulang saat container start (dicek
+      # lewat hash file vendor/.composer-lock-hash). Kalau bind-mount ini
+      # mau dihapus lagi (balik ke pola "image dibekukan penuh"), pastikan
+      # logic composer-install-otomatis di entrypoint.sh juga disesuaikan,
+      # jangan cuma menghapus baris ini saja.
+      - ./backend:/var/www/html
       - tms_storage_nfs:/var/www/html/storage/app
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -63,6 +69,7 @@ services:
     env_file:
       - ./backend/.env
     volumes:
+      - ./backend:/var/www/html
       - tms_storage_nfs:/var/www/html/storage/app
     extra_hosts:
       - "host.docker.internal:host-gateway"
