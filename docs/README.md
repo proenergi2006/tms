@@ -12,6 +12,10 @@ Transport Management System (TMS) — pengganti sistem operasional logistik berb
 5. [DB Schema (DDL)](05-DB-Schema.sql) — skema lengkap `tms_db` dalam SQL MySQL, siap dipetakan ke migration Laravel.
 6. [Panduan Pengguna](06-Panduan-Pengguna.md) — tata cara memakai aplikasi per peran, mulai dari login sampai alur kerja harian.
 
+### Dokumen Aplikasi Terpisah
+
+- [POD App — PRD v1.0](pod-app/01-PRD.md) — aplikasi mobile Flutter terpisah untuk Driver (Proof of Delivery + tracking lokasi), backend & database sendiri, sinkron data monitoring ke TMS untuk dilihat Tim Logistik/Logistik HO/Manajemen (pola integrasi mirip SYOP).
+
 ## Status
 
 PRD (Bagian 4–7, 12, 14, 15), Architecture Document (ringkasan tech stack, matriks integrasi), dan Design Document (daftar endpoint API) sudah lengkap. Diagram (context diagram, ERD, component diagram, deployment, flow, state machine, sinkronisasi SYOP) disediakan sebagai diagram Mermaid langsung di dalam dokumen — dapat dirender ulang menjadi gambar formal bila diperlukan untuk presentasi.
