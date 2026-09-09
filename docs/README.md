@@ -17,6 +17,7 @@ Transport Management System (TMS) — pengganti sistem operasional logistik berb
 - [POD ProEnergi — PRD v2.0](pod-app/01-PRD.md) — aplikasi mobile Flutter pengganti JAVAZ untuk Driver (Proof of Delivery + tracking lokasi), backend & database sendiri, baca penugasan dari SYOP dan sinkron data monitoring ke TMS untuk dilihat Tim Logistik/Logistik HO/Manajemen.
 - [POD ProEnergi — Architecture Document v1.0](pod-app/02-Architecture.md) — arsitektur mobile Flutter, backend & database POD terpisah, adapter baca SYOP read-only, integrasi push ke TMS, keamanan, dan deployment.
 - [POD ProEnergi — Design Document v1.0](pod-app/03-Design-Document.md) — DDL `pod_db`, spesifikasi API mobile & service-to-service, kontrak endpoint `/api/v1/pod-sync/*` di sisi TMS, state machine shipment/aktivitas, sequence sinkronisasi.
+- [POD ProEnergi — Wireframe Document](pod-app/04-Wireframe.md) — wireframe low-fidelity 10 layar utama aplikasi Flutter, dipetakan ke widget/package Flutter yang disarankan.
 
 ## Status
 
