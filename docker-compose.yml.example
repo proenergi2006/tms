@@ -3,10 +3,20 @@
 # mysql di sini — app & scheduler konek ke MySQL yang sudah jalan di host
 # lewat host.docker.internal (lihat extra_hosts di bawah).
 #
-# Sebelum "docker compose up -d --build":
+# INI TEMPLATE, bukan file yang dipakai langsung — docker-compose.yml
+# (tanpa ".example") sengaja di-gitignore, supaya kustomisasi manual di
+# server (IP NFS, port, dst) tidak pernah bentrok lagi dengan "git pull".
+#
+# Setup SEKALI di server:
+#   cp docker-compose.yml.example docker-compose.yml
 #   cp backend/.env.docker.example backend/.env   # lalu isi semua <ISI>
 #   cp .env.example .env                          # lalu isi NFS_ADDR/NFS_PATH/WEB_PORT/SYOP_URL
 #
+# Setelah itu docker-compose.yml boleh diedit bebas langsung di server
+# (git tidak akan pernah menyentuhnya lagi) — kalau ada versi baru dari
+# git (docker-compose.yml.example berubah), bandingkan manual & gabungkan
+# perubahannya sendiri ke docker-compose.yml server, JANGAN di-copy timpa
+# begitu saja (bisa menghapus kustomisasi server yang sudah ada).
 volumes:
   # Storage NFS shared (attachment upload dsb.) — persisten lintas rebuild
   # image DAN lintas host kalau container dipindah node. IP/path diambil dari
