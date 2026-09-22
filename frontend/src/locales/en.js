@@ -319,6 +319,8 @@ export default {
     stock: 'Stock',
     minStock: 'Minimum Stock',
     unitCost: 'Unit Cost',
+    searchPlaceholder: 'Search...',
+    detail: 'Detail',
     edit: 'Edit',
     add: 'Add',
     noData: 'No data yet.',

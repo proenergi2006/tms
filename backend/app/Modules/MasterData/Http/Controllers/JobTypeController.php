@@ -12,7 +12,16 @@ class JobTypeController extends Controller
 {
     public function index(Request $request)
     {
-        return JobTypeResource::collection(JobType::orderBy('name')->paginate($request->integer('per_page', 15)));
+        $search = $request->string('search')->trim();
+
+        $jobTypes = JobType::query()
+            ->when($search->isNotEmpty(), fn ($q) => $q->where(
+                fn ($qq) => $qq->where('name', 'like', "%{$search}%")->orWhere('category', 'like', "%{$search}%")
+            ))
+            ->orderBy('name')
+            ->paginate($request->integer('per_page', 15));
+
+        return JobTypeResource::collection($jobTypes);
     }
 
     public function store(JobTypeRequest $request)

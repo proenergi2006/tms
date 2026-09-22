@@ -12,9 +12,14 @@ class MechanicController extends Controller
 {
     public function index(Request $request)
     {
+        $search = $request->string('search')->trim();
+
         $query = Mechanic::query()
             ->with('branch')
-            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->query('status')));
+            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->query('status')))
+            ->when($search->isNotEmpty(), fn ($q) => $q->where(
+                fn ($qq) => $qq->where('name', 'like', "%{$search}%")->orWhere('phone', 'like', "%{$search}%")
+            ));
 
         if ($request->user()->isBranchScoped()) {
             $query->where('branch_id', $request->user()->branch_id);

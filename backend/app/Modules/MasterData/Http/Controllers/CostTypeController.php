@@ -12,7 +12,16 @@ class CostTypeController extends Controller
 {
     public function index(Request $request)
     {
-        return CostTypeResource::collection(CostType::orderBy('name')->paginate($request->integer('per_page', 15)));
+        $search = $request->string('search')->trim();
+
+        $costTypes = CostType::query()
+            ->when($search->isNotEmpty(), fn ($q) => $q->where(
+                fn ($qq) => $qq->where('name', 'like', "%{$search}%")->orWhere('category', 'like', "%{$search}%")
+            ))
+            ->orderBy('name')
+            ->paginate($request->integer('per_page', 15));
+
+        return CostTypeResource::collection($costTypes);
     }
 
     public function store(CostTypeRequest $request)

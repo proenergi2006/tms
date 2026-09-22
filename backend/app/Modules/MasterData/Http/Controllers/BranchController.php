@@ -6,12 +6,22 @@ use App\Http\Controllers\Controller;
 use App\Modules\MasterData\Http\Requests\BranchRequest;
 use App\Modules\MasterData\Http\Resources\BranchResource;
 use App\Modules\MasterData\Models\Branch;
+use Illuminate\Http\Request;
 
 class BranchController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return BranchResource::collection(Branch::orderBy('name')->paginate(request('per_page', 15)));
+        $search = $request->string('search')->trim();
+
+        $branches = Branch::query()
+            ->when($search->isNotEmpty(), fn ($q) => $q->where(
+                fn ($qq) => $qq->where('name', 'like', "%{$search}%")->orWhere('code', 'like', "%{$search}%")
+            ))
+            ->orderBy('name')
+            ->paginate($request->integer('per_page', 15));
+
+        return BranchResource::collection($branches);
     }
 
     public function store(BranchRequest $request)

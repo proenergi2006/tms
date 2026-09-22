@@ -319,6 +319,8 @@ export default {
     stock: 'Stok',
     minStock: 'Stok Minimum',
     unitCost: 'Harga Satuan',
+    searchPlaceholder: 'Cari...',
+    detail: 'Detail',
     edit: 'Ubah',
     add: 'Tambah',
     noData: 'Belum ada data.',
