@@ -86,6 +86,11 @@
         { key: 'contact_person', label: t('masterData.contactPerson'), type: 'text' },
         { key: 'phone', label: t('common.phone'), type: 'text' },
         { key: 'address', label: t('masterData.address'), type: 'text' },
+        // Beda dari branch_id di tab lain (tidak required) — vendor lama
+        // (dibuat sebelum kolom ini ada) belum punya cabang dan tetap
+        // dianggap valid (referensi bersama) sampai di-assign manual, lihat
+        // catatan di VendorController::index()/migration terkait.
+        { key: 'branch_id', label: t('common.branch'), type: 'select', optionsSource: 'branches' },
         { key: 'status', label: t('common.status'), type: 'select', options: statusOptions.value, editOnly: true },
       ],
     },

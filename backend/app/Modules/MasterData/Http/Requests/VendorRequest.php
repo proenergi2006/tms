@@ -20,6 +20,11 @@ class VendorRequest extends FormRequest
             'contact_person' => ['nullable', 'string', 'max:100'],
             'phone' => ['nullable', 'string', 'max:20'],
             'address' => ['nullable', 'string', 'max:255'],
+            // Nullable (bukan required seperti driver/mekanik) — lihat catatan
+            // di migration add_branch_id_to_vendors_table: vendor lama belum
+            // punya cabang, jangan blokir update field lain cuma karena
+            // belum sempat di-assign.
+            'branch_id' => ['nullable', 'exists:branches,id'],
             'status' => ['sometimes', Rule::in(['aktif', 'nonaktif'])],
         ];
     }
