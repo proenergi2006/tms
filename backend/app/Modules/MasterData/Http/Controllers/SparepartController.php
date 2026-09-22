@@ -27,11 +27,16 @@ class SparepartController extends Controller
 
     public function index(Request $request)
     {
+        $search = $request->string('search')->trim();
+
         $query = Sparepart::query()
             ->with('warehouse')
             ->when($request->filled('warehouse_id'), fn ($q) => $q->where('warehouse_id', $request->query('warehouse_id')))
             ->when($request->filled('category'), fn ($q) => $q->where('category', $request->query('category')))
-            ->when($request->boolean('below_minimum'), fn ($q) => $q->whereColumn('stock_qty', '<', 'min_stock'));
+            ->when($request->boolean('below_minimum'), fn ($q) => $q->whereColumn('stock_qty', '<', 'min_stock'))
+            ->when($search->isNotEmpty(), fn ($q) => $q->where(
+                fn ($qq) => $qq->where('name', 'like', "%{$search}%")->orWhere('sku', 'like', "%{$search}%")
+            ));
 
         if ($request->user()->isBranchScoped()) {
             $branchId = $request->user()->branch_id;

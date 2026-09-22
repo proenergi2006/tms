@@ -12,9 +12,14 @@ class VendorController extends Controller
 {
     public function index(Request $request)
     {
+        $search = $request->string('search')->trim();
+
         $vendors = Vendor::query()
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->query('status')))
             ->when($request->filled('type'), fn ($q) => $q->where('type', $request->query('type')))
+            ->when($search->isNotEmpty(), fn ($q) => $q->where(
+                fn ($qq) => $qq->where('name', 'like', "%{$search}%")->orWhere('contact_person', 'like', "%{$search}%")
+            ))
             ->orderBy('name')
             ->paginate($request->integer('per_page', 15));
 

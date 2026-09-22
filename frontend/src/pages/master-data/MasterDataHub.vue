@@ -148,20 +148,51 @@
   const tab = ref('branches')
   const rows = ref([])
   const loading = ref(false)
+  const totalItems = ref(0)
+  const page = ref(1)
+  const itemsPerPage = ref(15)
+  const search = ref('')
 
   const activeTab = () => tabs.value.find(item => item.value === tab.value)
+
+  const headers = computed(() => [
+    { title: t('common.rowNo'), key: 'no', sortable: false, width: 56 },
+    ...activeTab().columns.map(col => ({ title: col.label, key: col.key, sortable: false })),
+    { title: t('common.actions'), key: 'actions', sortable: false, align: 'end' },
+  ])
 
   async function loadTab () {
     loading.value = true
     try {
-      const { data } = await activeTab().api.list({ per_page: 100 })
+      const { data } = await activeTab().api.list({
+        page: page.value,
+        per_page: itemsPerPage.value,
+        ...(search.value.trim() ? { search: search.value.trim() } : {}),
+      })
       rows.value = data.data
+      totalItems.value = data.meta?.total ?? data.data.length
     } finally {
       loading.value = false
     }
   }
 
-  watch(tab, loadTab, { immediate: true })
+  // Ganti tab -> reset pencarian & kembali ke halaman 1 (hasil filter tab
+  // sebelumnya tidak relevan lagi untuk entitas yang berbeda).
+  watch(tab, () => {
+    search.value = ''
+    page.value = 1
+    loadTab()
+  }, { immediate: true })
+
+  // Debounce supaya tidak fetch di setiap ketikan huruf.
+  let searchTimer = null
+  function onSearchInput () {
+    clearTimeout(searchTimer)
+    searchTimer = setTimeout(() => {
+      page.value = 1
+      loadTab()
+    }, 400)
+  }
 
   // -- Sinkron Driver dari SYOP --
   // Hanya driver dari transportir Pro Energi sendiri atau TDS yang ditarik
@@ -269,6 +300,35 @@
     }
   }
 
+  // -- Detail (read-only) --
+  // Tabel hanya menampilkan subset field lewat `columns`; dialog ini
+  // menampilkan seluruh `fields` per tab (termasuk yang editOnly, mis.
+  // status) supaya user (termasuk role view-only tanpa master-data.manage)
+  // bisa melihat data lengkap tanpa perlu membuka form edit.
+  const detailDialog = ref(false)
+  const detailRow = ref(null)
+
+  function openDetail (row) {
+    detailRow.value = row
+    detailDialog.value = true
+  }
+
+  function detailValue (field) {
+    const raw = detailRow.value?.[field.key]
+    if ([null, undefined, ''].includes(raw)) return '-'
+    if (field.key === 'unit_cost') return formatCurrency(raw)
+    if (field.type !== 'select') return raw
+
+    const options = optionsFor(field)
+    const match = field.optionsSource
+      ? options.find(option => option.id === raw)
+      : options.find(option => option.value === raw)
+
+    if (!match) return raw
+
+    return field.optionsSource ? match.name : match.title
+  }
+
   // -- Delete --
   const deleteDialog = ref(false)
   const deleting = ref(false)
@@ -322,46 +382,57 @@
       @click:close="syncMessage = null"
     >{{ syncMessage }}</v-alert>
 
-    <v-card :loading="loading">
-      <v-table>
-        <thead>
-          <tr>
-            <th>{{ t('common.rowNo') }}</th>
-            <th v-for="col in activeTab().columns" :key="col.key">{{ col.label }}</th>
-            <th v-if="canManage" class="text-right">{{ t('common.actions') }}</th>
-          </tr>
-        </thead>
+    <v-text-field
+      v-model="search"
+      class="mb-4"
+      clearable
+      density="compact"
+      hide-details
+      :label="t('masterData.searchPlaceholder')"
+      prepend-inner-icon="mdi-magnify"
+      @click:clear="onSearchInput"
+      @update:model-value="onSearchInput"
+    />
 
-        <tbody>
-          <tr v-for="(row, index) in rows" :key="row.id">
-            <td>{{ index + 1 }}</td>
+    <v-card>
+      <v-data-table-server
+        v-model:items-per-page="itemsPerPage"
+        v-model:page="page"
+        :headers="headers"
+        :items="rows"
+        :items-length="totalItems"
+        :loading="loading"
+        :no-data-text="t('masterData.noData')"
+        @update:options="loadTab"
+      >
+        <template #item.no="{ index }">
+          {{ (page - 1) * itemsPerPage + index + 1 }}
+        </template>
 
-            <td v-for="col in activeTab().columns" :key="col.key">
-              <StatusChip v-if="col.key === 'status'" :status="row[col.key]" />
+        <template v-for="col in activeTab().columns" :key="col.key" #[`item.${col.key}`]="{ item }">
+          <StatusChip v-if="col.key === 'status'" :status="item[col.key]" />
 
-              <span
-                v-else-if="col.key === 'stock_qty' && row.is_below_minimum_stock"
-                class="text-error font-weight-medium"
-              >
-                <v-icon icon="mdi-alert-circle-outline" size="small" start />{{ row[col.key] ?? '-' }}
-              </span>
+          <span
+            v-else-if="col.key === 'stock_qty' && item.is_below_minimum_stock"
+            class="text-error font-weight-medium"
+          >
+            <v-icon icon="mdi-alert-circle-outline" size="small" start />{{ item[col.key] ?? '-' }}
+          </span>
 
-              <span v-else-if="col.key === 'unit_cost'">{{ formatCurrency(row[col.key]) }}</span>
+          <span v-else-if="col.key === 'unit_cost'">{{ formatCurrency(item[col.key]) }}</span>
 
-              <span v-else>{{ row[col.key] ?? '-' }}</span>
-            </td>
+          <span v-else>{{ item[col.key] ?? '-' }}</span>
+        </template>
 
-            <td v-if="canManage" class="text-right">
-              <v-btn icon="mdi-pencil-outline" size="small" variant="text" @click="openEdit(row)" />
-              <v-btn icon="mdi-delete-outline" size="small" variant="text" @click="confirmDelete(row)" />
-            </td>
-          </tr>
+        <template #item.actions="{ item }">
+          <v-btn icon="mdi-eye-outline" size="small" variant="text" @click="openDetail(item)" />
 
-          <tr v-if="rows.length === 0">
-            <td class="text-medium-emphasis" :colspan="activeTab().columns.length + 1 + (canManage ? 1 : 0)">{{ t('masterData.noData') }}</td>
-          </tr>
-        </tbody>
-      </v-table>
+          <template v-if="canManage">
+            <v-btn icon="mdi-pencil-outline" size="small" variant="text" @click="openEdit(item)" />
+            <v-btn icon="mdi-delete-outline" size="small" variant="text" @click="confirmDelete(item)" />
+          </template>
+        </template>
+      </v-data-table-server>
     </v-card>
 
     <v-dialog v-model="dialog" max-width="480">
@@ -398,6 +469,28 @@
           <v-spacer />
           <v-btn variant="text" @click="dialog = false">{{ t('common.cancel') }}</v-btn>
           <v-btn color="primary" :loading="saving" variant="flat" @click="submit">{{ t('common.save') }}</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="detailDialog" max-width="480">
+      <v-card v-if="detailRow">
+        <v-card-title>{{ t('masterData.detail') }} — {{ activeTab().label }}</v-card-title>
+
+        <v-card-text>
+          <v-row v-for="field in activeTab().fields" :key="field.key" density="compact">
+            <v-col class="text-medium-emphasis" cols="5">{{ field.label }}</v-col>
+
+            <v-col cols="7">
+              <StatusChip v-if="field.key === 'status'" :status="detailRow[field.key]" />
+              <span v-else>{{ detailValue(field) }}</span>
+            </v-col>
+          </v-row>
+        </v-card-text>
+
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="detailDialog = false">{{ t('common.close') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>

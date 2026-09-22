@@ -12,7 +12,13 @@ class WarehouseController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Warehouse::query()->with('branch');
+        $search = $request->string('search')->trim();
+
+        $query = Warehouse::query()
+            ->with('branch')
+            ->when($search->isNotEmpty(), fn ($q) => $q->where(
+                fn ($qq) => $qq->where('name', 'like', "%{$search}%")->orWhere('address', 'like', "%{$search}%")
+            ));
 
         if ($request->user()->isBranchScoped()) {
             $query->where('branch_id', $request->user()->branch_id);

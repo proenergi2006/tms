@@ -4,5 +4,13 @@
 # repo ini public, jangan sampai kepublish. Isi lewat .env.example.
 .env
 
+# docker-compose.yml sengaja di-ignore (bukan Dockerfile — itu tetap di git,
+# lihat backend/Dockerfile & frontend/Dockerfile) — orkestrasi ini spesifik
+# per server (bind-mount storage, port, dst) dan sering dikustomisasi manual
+# di server tanpa lewat git, jadi selalu bentrok saat "git pull" kalau
+# tetap di-track. Copy dari docker-compose.yml.example SEKALI di server,
+# lalu edit bebas di sana — git tidak akan pernah menyentuhnya lagi.
+docker-compose.yml
+
 *.bak
 backend/Dockerfile_backup

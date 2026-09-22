@@ -12,6 +12,8 @@ Transport Management System (TMS) — pengganti sistem operasional logistik berb
 5. [DB Schema (DDL)](05-DB-Schema.sql) — skema lengkap `tms_db` dalam SQL MySQL, siap dipetakan ke migration Laravel.
 6. [Panduan Pengguna](06-Panduan-Pengguna.md) — tata cara memakai aplikasi per peran, mulai dari login sampai alur kerja harian.
 
+> **Catatan:** Dokumentasi aplikasi mobile driver (OSPOD/POD, pengganti JAVAZ) **bukan bagian dari repo ini** — proyek tersebut sepenuhnya terpisah (codebase, backend, database sendiri, terintegrasi langsung ke `proenergi`, tanpa sinkronisasi ke TMS). Lihat `Documents/Logistik/POD-Driver/` (PRD, pertanyaan stakeholder, kode backend & mobile).
+
 ## Status
 
 PRD (Bagian 4–7, 12, 14, 15), Architecture Document (ringkasan tech stack, matriks integrasi), dan Design Document (daftar endpoint API) sudah lengkap. Diagram (context diagram, ERD, component diagram, deployment, flow, state machine, sinkronisasi SYOP) disediakan sebagai diagram Mermaid langsung di dalam dokumen — dapat dirender ulang menjadi gambar formal bila diperlukan untuk presentasi.
