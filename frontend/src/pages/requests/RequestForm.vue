@@ -469,7 +469,7 @@
                   clearable
                   density="compact"
                   hide-details
-                  item-title="name"
+                  :item-title="item => `${item.sku} — ${item.name}`"
                   item-value="id"
                   :items="spareparts"
                   variant="underlined"
