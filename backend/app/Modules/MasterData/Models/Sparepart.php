@@ -12,7 +12,8 @@ class Sparepart extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'sku', 'name', 'category', 'unit', 'unit_cost', 'warehouse_id', 'stock_qty', 'min_stock',
+        'sku', 'name', 'brand', 'part_number', 'category', 'criteria', 'unit', 'unit_cost',
+        'warehouse_id', 'location', 'stock_qty', 'min_stock', 'status',
     ];
 
     protected $casts = [

@@ -36,6 +36,10 @@
     .map(value => ({ title: t(`enums.sparepartCategory.${value}`), value })))
   const sparepartUnitOptions = computed(() => ['pcs', 'set', 'unit', 'liter', 'box', 'meter']
     .map(value => ({ title: t(`enums.sparepartUnit.${value}`), value })))
+  const sparepartCriteriaOptions = computed(() => ['very_fast', 'fast', 'medium', 'slow', 'very_slow', 'non']
+    .map(value => ({ title: t(`enums.sparepartCriteria.${value}`), value })))
+  const sparepartStatusOptions = computed(() => ['aman', 'order', 'dead_stock', 'non_aktif']
+    .map(value => ({ title: t(`enums.status.${value}`), value })))
 
   const tabs = computed(() => [
     {
@@ -113,6 +117,7 @@
         { key: 'sku', label: t('masterData.sku') }, { key: 'name', label: t('common.name') },
         { key: 'unit_cost', label: t('masterData.unitCost') },
         { key: 'stock_qty', label: t('masterData.stock') }, { key: 'min_stock', label: t('masterData.minStock') },
+        { key: 'criteria', label: t('masterData.criteria') }, { key: 'status', label: t('common.status') },
       ],
       fields: [
         // SKU dibuat otomatis oleh backend saat create (lihat
@@ -120,12 +125,22 @@
         // mengubah data yang sudah ada, sebagai referensi.
         { key: 'sku', label: t('masterData.sku'), type: 'text', hiddenOnCreate: true, readonly: true },
         { key: 'name', label: t('common.name'), type: 'text', required: true },
+        { key: 'brand', label: t('masterData.brand'), type: 'text' },
+        { key: 'part_number', label: t('masterData.partNumber'), type: 'text' },
         { key: 'category', label: t('masterData.category'), type: 'select', options: sparepartCategoryOptions.value },
         { key: 'unit', label: t('masterData.unit'), type: 'select', options: sparepartUnitOptions.value },
         { key: 'unit_cost', label: t('masterData.unitCost'), type: 'number' },
         { key: 'warehouse_id', label: t('masterData.warehouse'), type: 'select', optionsSource: 'warehouses', required: true },
+        { key: 'location', label: t('masterData.location'), type: 'text' },
         { key: 'stock_qty', label: t('masterData.stock'), type: 'number' },
         { key: 'min_stock', label: t('masterData.minStock'), type: 'number' },
+        // Kriteria (klasifikasi fast/slow moving) & Status (kesehatan stok)
+        // biasanya baru diketahui setelah ada riwayat pemakaian, bukan saat
+        // sparepart baru pertama didaftarkan — sama seperti field `status`
+        // di tab Driver/Mekanik/Vendor, disembunyikan saat create (dapat
+        // default dari backend), cuma bisa diisi lewat edit.
+        { key: 'criteria', label: t('masterData.criteria'), type: 'select', options: sparepartCriteriaOptions.value, editOnly: true },
+        { key: 'status', label: t('common.status'), type: 'select', options: sparepartStatusOptions.value, editOnly: true },
       ],
     },
     {
@@ -425,6 +440,8 @@
           </span>
 
           <span v-else-if="col.key === 'unit_cost'">{{ formatCurrency(item[col.key]) }}</span>
+
+          <span v-else-if="col.key === 'criteria'">{{ item[col.key] ? t(`enums.sparepartCriteria.${item[col.key]}`) : '-' }}</span>
 
           <span v-else>{{ item[col.key] ?? '-' }}</span>
         </template>

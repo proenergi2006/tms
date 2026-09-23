@@ -21,6 +21,24 @@ const STATUS_COLOR = {
   maintenance: 'warning',
   rusak: 'error',
   dihapuskan: 'default',
+
+  // status kesehatan stok sparepart (lihat SparepartController)
+  aman: 'success',
+  order: 'error',
+  dead_stock: 'warning',
+  non_aktif: 'default',
+
+  // status pengiriman OSPOD (Fleet Monitoring & Shipment, lihat
+  // FleetMonitoringService/ShipmentService) — 'open' & 'selesai' dipakai
+  // modul Pengiriman (lihat ShipmentsList.vue), sisanya sudah ada sejak
+  // Fleet Monitoring.
+  open: 'default',
+  mulai: 'info',
+  tiba_terminal: 'info',
+  selesai_muat: 'info',
+  tiba_customer: 'warning',
+  selesai: 'success',
+  standby: 'default',
 }
 
 export function statusColor (status) {

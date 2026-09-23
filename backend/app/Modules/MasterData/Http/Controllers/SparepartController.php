@@ -62,6 +62,7 @@ class SparepartController extends Controller
             'unit_cost' => $request->input('unit_cost', 0),
             'stock_qty' => $request->input('stock_qty', 0),
             'min_stock' => $request->input('min_stock', 0),
+            'status' => $request->input('status', 'aman'),
         ]);
 
         return (new SparepartResource($sparepart))->response()->setStatusCode(201);
