@@ -50,14 +50,14 @@ class SparepartController extends Controller
 
     public function store(SparepartRequest $request)
     {
-        $warehouseBranchId = Warehouse::find($request->validated('warehouse_id'))?->branch_id;
-        if (! $request->user()->canAccessBranch($warehouseBranchId)) {
+        $warehouse = Warehouse::with('branch')->find($request->validated('warehouse_id'));
+        if (! $request->user()->canAccessBranch($warehouse?->branch_id)) {
             abort(403, 'Anda hanya dapat menambahkan sparepart untuk gudang cabang Anda sendiri.');
         }
 
         $sparepart = Sparepart::create([
             ...$request->validated(),
-            'sku' => $this->generateSku(),
+            'sku' => $this->generateSku($warehouse->branch_id, $warehouse->branch->code),
             'unit' => $request->input('unit', 'pcs'),
             'unit_cost' => $request->input('unit_cost', 0),
             'stock_qty' => $request->input('stock_qty', 0),
@@ -68,18 +68,29 @@ class SparepartController extends Controller
     }
 
     /**
-     * SKU wajib dibuat otomatis (bukan input manual) — format SP-00001,
-     * berurutan berdasarkan jumlah sparepart yang pernah dibuat (termasuk
-     * yang sudah dihapus/soft-deleted, supaya nomor tidak pernah dipakai
-     * ulang). Diverifikasi unik dalam loop kecil untuk berjaga-jaga dari
-     * race condition dua pembuatan bersamaan.
+     * Format SP-{KODE_CABANG}-00001, nomor urut RESET per cabang (bukan
+     * global lagi) — supaya SKU langsung mengenali asal cabangnya secara
+     * fisik (label/stiker gudang), sesuai keputusan produk. Cabang
+     * diturunkan dari gudang yang dipilih saat pembuatan (spareparts tidak
+     * punya kolom branch_id sendiri). Dihitung termasuk yang sudah
+     * dihapus/soft-deleted (withTrashed) supaya nomor tidak pernah dipakai
+     * ulang, dan diverifikasi unik dalam loop kecil untuk berjaga-jaga dari
+     * race condition dua pembuatan bersamaan pada cabang yang sama.
+     *
+     * Catatan: kalau sparepart ini nanti dipindah ke gudang cabang lain
+     * lewat update() (jarang terjadi), SKU-nya TIDAK ikut di-generate ulang
+     * — tetap membawa kode cabang saat pertama dibuat. SKU dirancang jadi
+     * identitas stabil, bukan sesuatu yang berubah-ubah ikut lokasi
+     * terkini — bukan bug kalau ditemukan nanti.
      */
-    private function generateSku(): string
+    private function generateSku(int $branchId, string $branchCode): string
     {
-        $next = Sparepart::withTrashed()->count() + 1;
+        $next = Sparepart::withTrashed()
+            ->whereHas('warehouse', fn ($q) => $q->where('branch_id', $branchId))
+            ->count() + 1;
 
         do {
-            $candidate = 'SP-'.str_pad((string) $next, 5, '0', STR_PAD_LEFT);
+            $candidate = "SP-{$branchCode}-".str_pad((string) $next, 5, '0', STR_PAD_LEFT);
             $next++;
         } while (Sparepart::withTrashed()->where('sku', $candidate)->exists());
 
