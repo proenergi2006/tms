@@ -36,9 +36,27 @@ class SyopSyncService
         foreach ($eligible as $row) {
             $fleet = Fleet::where('syop_fleet_id', $row->syop_id)->first();
 
+            // Belum pernah tersinkron dengan syop_fleet_id INI secara spesifik
+            // — tapi armadanya mungkin SUDAH ada di TMS dengan syop_fleet_id
+            // LAMA yang berbeda. Kasus nyata: SYOP sempat punya duplikat
+            // nomor polisi terdaftar di dua transportir/cabang berbeda
+            // (id_master beda), TMS ambil salah satu (lihat dedup di
+            // SyopNativeAdapter::getEligibleFleets()), lalu tim SYOP
+            // memperbaiki data itu belakangan sehingga id_master yang
+            // eligible sekarang berbeda dari yang tersimpan di TMS. Re-link
+            // ke baris TMS yang sudah ada (by plate_number) alih-alih
+            // mencoba create baru dan bentrok unique constraint — SYOP tetap
+            // satu-satunya sumber kebenaran, jadi TMS harus ikut pindah
+            // cabang begitu data sumbernya benar, bukan "nyangkut" permanen
+            // di cabang lama walau sudah di-resync berkali-kali.
+            if (! $fleet) {
+                $fleet = Fleet::where('plate_number', $row->plate_number)->first();
+            }
+
             try {
                 if ($fleet) {
                     $fleet->update([
+                        'syop_fleet_id' => $row->syop_id,
                         'plate_number' => $row->plate_number,
                         'capacity' => $row->capacity,
                         'branch_id' => $branch->id,
@@ -58,10 +76,10 @@ class SyopSyncService
 
                 $synced++;
             } catch (UniqueConstraintViolationException) {
-                // Nomor polisi ini sudah dipakai armada lain di TMS (mis.
-                // dibuat manual sebelum sync, atau data SYOP dobel yang lolos
-                // dari dedup di SyopNativeAdapter::getEligibleFleets()) —
-                // dilewati, bukan menggagalkan seluruh proses sync.
+                // Sisa kondisi residual yang masih mungkin lolos dari
+                // penanganan re-link di atas (mis. race condition dua sync
+                // berjalan bersamaan) — dilewati, bukan menggagalkan seluruh
+                // proses sync.
                 $skipped++;
             }
         }
