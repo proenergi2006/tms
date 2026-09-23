@@ -1,5 +1,5 @@
 <script setup>
-  import { onMounted, ref } from 'vue'
+  import { computed, onMounted, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useRouter } from 'vue-router'
   import { branchesApi, fleetsApi } from '@/api/masterData'
@@ -16,15 +16,39 @@
   const branches = ref([])
   const loading = ref(false)
   const search = ref('')
+  const page = ref(1)
+  // Grid kartu (bukan v-data-table), jadi per_page tetap/tidak ada selector
+  // "items per page" — 24 pas untuk 3 kolom (md) x 8 baris.
+  const itemsPerPage = 24
+  const totalItems = ref(0)
+  const totalPages = computed(() => Math.max(1, Math.ceil(totalItems.value / itemsPerPage)))
 
   async function load () {
     loading.value = true
     try {
-      const { data } = await fleetsApi.list({ per_page: 50 })
+      const { data } = await fleetsApi.list({
+        page: page.value,
+        per_page: itemsPerPage,
+        ...(search.value.trim() ? { search: search.value.trim() } : {}),
+      })
       fleets.value = data.data
+      totalItems.value = data.meta?.total ?? data.data.length
     } finally {
       loading.value = false
     }
+  }
+
+  // Sebelumnya search cuma filter array yang sudah ke-cap per_page:50 di
+  // client — armada di luar 50 pertama jadi "tidak ketemu" walau datanya
+  // ada (silent data loss). Sekarang search dikirim ke backend (debounce
+  // 400ms) & reset ke halaman 1 supaya hasilnya selalu benar-benar lengkap.
+  let searchTimer = null
+  function onSearchInput () {
+    clearTimeout(searchTimer)
+    searchTimer = setTimeout(() => {
+      page.value = 1
+      load()
+    }, 400)
   }
 
   onMounted(async () => {
@@ -133,11 +157,14 @@
 
       <v-text-field
         v-model="search"
+        clearable
         density="compact"
         hide-details
         max-width="280"
         prepend-inner-icon="mdi-magnify"
         single-line
+        @click:clear="onSearchInput"
+        @update:model-value="onSearchInput"
       />
 
       <v-btn
@@ -161,9 +188,11 @@
       @click:close="syncMessage = null"
     >{{ syncMessage }}</v-alert>
 
+    <v-alert v-if="!loading && fleets.length === 0" type="info" variant="tonal">{{ t('fleets.noData') }}</v-alert>
+
     <v-row>
       <v-col
-        v-for="fleet in fleets.filter(f => !search || f.plate_number.toLowerCase().includes(search.toLowerCase()))"
+        v-for="fleet in fleets"
         :key="fleet.id"
         cols="12"
         md="4"
@@ -204,6 +233,14 @@
         </v-card>
       </v-col>
     </v-row>
+
+    <v-pagination
+      v-if="totalItems > itemsPerPage"
+      v-model="page"
+      class="mt-4"
+      :length="totalPages"
+      @update:model-value="load"
+    />
 
     <v-dialog v-model="dialog" max-width="560">
       <v-card>

@@ -16,9 +16,16 @@ class FleetController extends Controller
 {
     public function index(Request $request)
     {
+        $search = $request->string('search')->trim();
+
         $query = Fleet::query()
             ->with('branch')
-            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->query('status')));
+            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->query('status')))
+            ->when($search->isNotEmpty(), fn ($q) => $q->where(
+                fn ($qq) => $qq->where('plate_number', 'like', "%{$search}%")
+                    ->orWhere('brand', 'like', "%{$search}%")
+                    ->orWhere('model', 'like', "%{$search}%")
+            ));
 
         // Role bercabang (Driver, Mekanik, Kepala Pool, BM, Tim Logistik)
         // hanya melihat armada cabangnya sendiri — lihat User::isBranchScoped().

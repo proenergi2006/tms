@@ -356,6 +356,7 @@ export default {
     syncSuccess: '{synced} fleets synced from SYOP.',
     syncSuccessWithSkipped: '{synced} fleets synced from SYOP ({skipped} skipped due to plate number conflicts).',
     syncFailed: 'Failed to sync fleets from SYOP.',
+    noData: 'No matching fleets.',
     tabHistory: 'History',
     tabLegal: 'Legal Docs',
     tabFuel: 'Fuel Log',

@@ -356,6 +356,7 @@ export default {
     syncSuccess: '{synced} armada berhasil disinkronkan dari SYOP.',
     syncSuccessWithSkipped: '{synced} armada berhasil disinkronkan dari SYOP ({skipped} dilewati karena nomor polisi bentrok).',
     syncFailed: 'Gagal sinkron armada dari SYOP.',
+    noData: 'Tidak ada armada yang cocok.',
     tabHistory: 'Riwayat',
     tabLegal: 'Legalitas',
     tabFuel: 'Fuel Log',
