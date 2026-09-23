@@ -1,5 +1,5 @@
 <script setup>
-  import { onMounted, ref, watch } from 'vue'
+  import { computed, onMounted, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useRoute } from 'vue-router'
   import { fleetHistoryApi } from '@/api/fleetHistory'
@@ -30,6 +30,23 @@
   const components = ref([])
   const loadingTab = ref(false)
 
+  // Riwayat/Fuel Log/Biaya dipaginasi server-side (backend sudah paginate()
+  // sejak awal, defaultnya 15/halaman) — sebelumnya frontend cuma ambil
+  // data.data dan buang meta paginasinya, jadi entri lebih lama dari 15
+  // baris pertama hilang total dari tampilan tanpa indikasi apa pun (angka
+  // Profit-Loss/Biaya-per-KM tetap benar karena itu agregasi SQL terpisah,
+  // bukan lewat endpoint ini — cuma daftar mentahnya yang ke-cut).
+  const itemsPerPage = 15
+  const historyPage = ref(1)
+  const historyTotal = ref(0)
+  const historyTotalPages = computed(() => Math.max(1, Math.ceil(historyTotal.value / itemsPerPage)))
+  const fuelPage = ref(1)
+  const fuelTotal = ref(0)
+  const fuelTotalPages = computed(() => Math.max(1, Math.ceil(fuelTotal.value / itemsPerPage)))
+  const costsPage = ref(1)
+  const costsTotal = ref(0)
+  const costsTotalPages = computed(() => Math.max(1, Math.ceil(costsTotal.value / itemsPerPage)))
+
   async function loadFleet () {
     const { data } = await fleetsApi.get(fleetId)
     fleet.value = data.data
@@ -40,8 +57,9 @@
     try {
       switch (name) {
         case 'riwayat': {
-          const { data } = await fleetHistoryApi.maintenanceHistory(fleetId)
+          const { data } = await fleetHistoryApi.maintenanceHistory(fleetId, { page: historyPage.value, per_page: itemsPerPage })
           maintenanceHistory.value = data.data
+          historyTotal.value = data.meta?.total ?? data.data.length
 
           break
         }
@@ -52,14 +70,16 @@
           break
         }
         case 'fuel': {
-          const { data } = await fleetHistoryApi.fuelLogs(fleetId)
+          const { data } = await fleetHistoryApi.fuelLogs(fleetId, { page: fuelPage.value, per_page: itemsPerPage })
           fuelLogs.value = data.data
+          fuelTotal.value = data.meta?.total ?? data.data.length
 
           break
         }
         case 'biaya': {
-          const { data } = await fleetHistoryApi.operationalCosts(fleetId)
+          const { data } = await fleetHistoryApi.operationalCosts(fleetId, { page: costsPage.value, per_page: itemsPerPage })
           operationalCosts.value = data.data
+          costsTotal.value = data.meta?.total ?? data.data.length
 
           break
         }
@@ -100,7 +120,15 @@
     }
   }
 
-  watch(tab, name => loadTab(name))
+  watch(tab, name => {
+    // Mulai dari halaman 1 tiap kali tab dibuka (bukan mempertahankan posisi
+    // halaman kunjungan sebelumnya, yang bisa out-of-range kalau datanya
+    // sudah berubah).
+    if (name === 'riwayat') historyPage.value = 1
+    if (name === 'fuel') fuelPage.value = 1
+    if (name === 'biaya') costsPage.value = 1
+    loadTab(name)
+  })
 
   onMounted(async () => {
     await loadFleet()
@@ -197,6 +225,7 @@
     try {
       await fleetHistoryApi.createFuelLog(fleetId, fuelForm.value)
       fuelDialog.value = false
+      fuelPage.value = 1
       await loadTab('fuel')
     } finally {
       savingFuel.value = false
@@ -421,7 +450,7 @@
 
             <tbody>
               <tr v-for="(row, index) in maintenanceHistory" :key="row.id">
-                <td>{{ index + 1 }}</td>
+                <td>{{ (historyPage - 1) * itemsPerPage + index + 1 }}</td>
                 <td>{{ formatDate(row.performed_at) }}</td>
                 <td>{{ row.description }}</td>
 
@@ -441,6 +470,14 @@
             </tbody>
           </v-table>
         </v-card>
+
+        <v-pagination
+          v-if="historyTotal > itemsPerPage"
+          v-model="historyPage"
+          class="mt-4"
+          :length="historyTotalPages"
+          @update:model-value="() => loadTab('riwayat')"
+        />
       </v-window-item>
 
       <v-window-item value="legalitas">
@@ -491,7 +528,7 @@
 
             <tbody>
               <tr v-for="(log, index) in fuelLogs" :key="log.id">
-                <td>{{ index + 1 }}</td>
+                <td>{{ (fuelPage - 1) * itemsPerPage + index + 1 }}</td>
                 <td>{{ formatDate(log.log_date) }}</td>
                 <td class="text-right">{{ log.liters }}</td>
                 <td class="text-right">{{ formatCurrency(log.cost) }}</td>
@@ -503,6 +540,14 @@
             </tbody>
           </v-table>
         </v-card>
+
+        <v-pagination
+          v-if="fuelTotal > itemsPerPage"
+          v-model="fuelPage"
+          class="mt-4"
+          :length="fuelTotalPages"
+          @update:model-value="() => loadTab('fuel')"
+        />
       </v-window-item>
 
       <v-window-item value="biaya">
@@ -512,7 +557,7 @@
 
             <tbody>
               <tr v-for="(cost, index) in operationalCosts" :key="cost.id">
-                <td>{{ index + 1 }}</td>
+                <td>{{ (costsPage - 1) * itemsPerPage + index + 1 }}</td>
                 <td>{{ formatDate(cost.incurred_at) }}</td>
                 <td>{{ cost.cost_type?.name }}</td>
                 <td>{{ cost.source_type }}</td>
@@ -523,6 +568,14 @@
             </tbody>
           </v-table>
         </v-card>
+
+        <v-pagination
+          v-if="costsTotal > itemsPerPage"
+          v-model="costsPage"
+          class="mt-4"
+          :length="costsTotalPages"
+          @update:model-value="() => loadTab('biaya')"
+        />
       </v-window-item>
 
       <v-window-item value="pendapatan">
