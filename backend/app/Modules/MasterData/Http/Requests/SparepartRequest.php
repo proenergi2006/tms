@@ -26,12 +26,15 @@ class SparepartRequest extends FormRequest
             'part_number' => ['nullable', 'string', 'max:100'],
             'category' => ['nullable', 'string', 'max:50'],
             'criteria' => ['nullable', Rule::in(['very_fast', 'fast', 'medium', 'slow', 'very_slow', 'non'])],
+            'lead_time_months' => ['nullable', 'numeric', 'min:0'],
             'unit' => ['sometimes', 'string', 'max:20'],
             'unit_cost' => ['sometimes', 'numeric', 'min:0'],
             'warehouse_id' => ['required', 'exists:warehouses,id'],
             'location' => ['nullable', 'string', 'max:100'],
             'stock_qty' => ['sometimes', 'integer', 'min:0'],
             'min_stock' => ['sometimes', 'integer', 'min:0'],
+            'max_stock' => ['nullable', 'integer', 'min:0'],
+            'safety_stock' => ['nullable', 'integer', 'min:0'],
             'status' => ['sometimes', Rule::in(['aman', 'order', 'dead_stock', 'non_aktif'])],
         ];
     }

@@ -117,6 +117,7 @@
         { key: 'sku', label: t('masterData.sku') }, { key: 'name', label: t('common.name') },
         { key: 'unit_cost', label: t('masterData.unitCost') },
         { key: 'stock_qty', label: t('masterData.stock') }, { key: 'min_stock', label: t('masterData.minStock') },
+        { key: 'max_stock', label: t('masterData.maxStock') }, { key: 'safety_stock', label: t('masterData.safetyStock') },
         { key: 'criteria', label: t('masterData.criteria') }, { key: 'status', label: t('common.status') },
       ],
       fields: [
@@ -128,12 +129,15 @@
         { key: 'brand', label: t('masterData.brand'), type: 'text' },
         { key: 'part_number', label: t('masterData.partNumber'), type: 'text' },
         { key: 'category', label: t('masterData.category'), type: 'select', options: sparepartCategoryOptions.value },
+        { key: 'lead_time_months', label: t('masterData.leadTimeMonths'), type: 'number' },
         { key: 'unit', label: t('masterData.unit'), type: 'select', options: sparepartUnitOptions.value },
         { key: 'unit_cost', label: t('masterData.unitCost'), type: 'number' },
         { key: 'warehouse_id', label: t('masterData.warehouse'), type: 'select', optionsSource: 'warehouses', required: true },
         { key: 'location', label: t('masterData.location'), type: 'text' },
         { key: 'stock_qty', label: t('masterData.stock'), type: 'number' },
         { key: 'min_stock', label: t('masterData.minStock'), type: 'number' },
+        { key: 'max_stock', label: t('masterData.maxStock'), type: 'number' },
+        { key: 'safety_stock', label: t('masterData.safetyStock'), type: 'number' },
         // Kriteria (klasifikasi fast/slow moving) & Status (kesehatan stok)
         // biasanya baru diketahui setelah ada riwayat pemakaian, bukan saat
         // sparepart baru pertama didaftarkan — sama seperti field `status`
