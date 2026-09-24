@@ -191,15 +191,21 @@
   }
 
   // -- Foto Armada --
-  const photoDialog = ref(false)
+  // Bisa lebih dari satu (depan/belakang/kiri/kanan) — lihat
+  // FleetController::storePhoto()/destroyPhoto(). Preset caption cuma
+  // saran, field-nya combobox jadi tetap bisa diisi bebas.
+  const addPhotoDialog = ref(false)
   const uploadingPhoto = ref(false)
   const photoFile = ref(null)
   const photoPreviewUrl = ref(null)
+  const photoCaption = ref(null)
+  const photoCaptionPresets = ['Depan', 'Belakang', 'Kiri', 'Kanan']
 
-  function openPhotoDialog () {
+  function openAddPhotoDialog () {
     photoFile.value = null
     photoPreviewUrl.value = null
-    photoDialog.value = true
+    photoCaption.value = null
+    addPhotoDialog.value = true
   }
 
   // v-file-input tanpa `multiple` tetap bisa mengirim array berisi satu File
@@ -216,11 +222,38 @@
   async function submitPhoto () {
     uploadingPhoto.value = true
     try {
-      await fleetsApi.uploadPhoto(fleetId, photoFile.value)
-      photoDialog.value = false
+      await fleetsApi.addPhoto(fleetId, photoFile.value, photoCaption.value)
+      addPhotoDialog.value = false
       await loadFleet()
     } finally {
       uploadingPhoto.value = false
+    }
+  }
+
+  // -- Lightbox (lihat foto ukuran penuh) --
+  // Sebelumnya foto cuma tampil sebagai thumbnail kecil 160x120 tanpa cara
+  // untuk melihat versi utuhnya — tidak user-friendly untuk benar-benar
+  // memeriksa kondisi armada dari foto.
+  const lightboxDialog = ref(false)
+  const lightboxIndex = ref(0)
+  const deletingPhoto = ref(false)
+  const lightboxPhoto = computed(() => fleet.value?.photos?.[lightboxIndex.value] ?? null)
+
+  function openLightbox (index) {
+    lightboxIndex.value = index
+    lightboxDialog.value = true
+  }
+
+  async function deleteLightboxPhoto () {
+    if (!lightboxPhoto.value) return
+
+    deletingPhoto.value = true
+    try {
+      await fleetsApi.removePhoto(fleetId, lightboxPhoto.value.id)
+      lightboxDialog.value = false
+      await loadFleet()
+    } finally {
+      deletingPhoto.value = false
     }
   }
 
@@ -395,20 +428,33 @@
     </div>
 
     <v-card class="mb-4">
-      <v-card-text class="d-flex align-center ga-4">
-        <v-img
-          v-if="fleet.photo_url"
-          class="rounded bg-grey-lighten-3"
-          height="120"
-          :src="fleet.photo_url"
-          width="160"
-        />
+      <v-card-title class="d-flex align-center">
+        {{ t('fleets.photos') }}
+        <v-spacer />
 
-        <div v-else class="d-flex align-center justify-center bg-grey-lighten-3 rounded" style="height: 120px; width: 160px">
-          <v-icon color="grey" icon="mdi-truck-outline" size="40" />
+        <v-btn
+          v-if="canManage"
+          prepend-icon="mdi-camera-plus-outline"
+          size="small"
+          variant="text"
+          @click="openAddPhotoDialog"
+        >{{ t('fleets.addPhoto') }}</v-btn>
+      </v-card-title>
+
+      <v-card-text>
+        <div v-if="!fleet.photos?.length" class="text-medium-emphasis">{{ t('fleets.noPhotos') }}</div>
+
+        <div v-else class="d-flex flex-wrap ga-3">
+          <div
+            v-for="(photo, index) in fleet.photos"
+            :key="photo.id"
+            style="cursor: pointer; width: 160px"
+            @click="openLightbox(index)"
+          >
+            <v-img aspect-ratio="4/3" class="rounded bg-grey-lighten-3" cover :src="photo.url" />
+            <div v-if="photo.caption" class="text-caption text-center text-truncate mt-1">{{ photo.caption }}</div>
+          </div>
         </div>
-
-        <v-btn v-if="canManage" prepend-icon="mdi-camera" variant="tonal" @click="openPhotoDialog">{{ t('fleets.changePhoto') }}</v-btn>
       </v-card-text>
     </v-card>
 
@@ -1006,9 +1052,9 @@
       </v-card>
     </v-dialog>
 
-    <v-dialog v-model="photoDialog" max-width="420">
+    <v-dialog v-model="addPhotoDialog" max-width="420">
       <v-card>
-        <v-card-title>{{ t('fleets.changePhoto') }}</v-card-title>
+        <v-card-title>{{ t('fleets.addPhoto') }}</v-card-title>
 
         <v-card-text>
           <v-img
@@ -1020,17 +1066,24 @@
 
           <v-file-input
             accept="image/*"
+            class="mb-2"
             :label="t('fleets.choosePhoto')"
             :model-value="photoFile"
             prepend-icon="mdi-camera"
             show-size
             @update:model-value="onPhotoSelected"
           />
+
+          <v-combobox
+            v-model="photoCaption"
+            :items="photoCaptionPresets"
+            :label="`${t('fleets.photoCaption')} ${t('common.optional')}`"
+          />
         </v-card-text>
 
         <v-card-actions>
           <v-spacer />
-          <v-btn variant="text" @click="photoDialog = false">{{ t('common.cancel') }}</v-btn>
+          <v-btn variant="text" @click="addPhotoDialog = false">{{ t('common.cancel') }}</v-btn>
 
           <v-btn
             color="primary"
@@ -1039,6 +1092,32 @@
             variant="flat"
             @click="submitPhoto"
           >{{ t('common.save') }}</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="lightboxDialog" max-width="900">
+      <v-card v-if="lightboxPhoto">
+        <v-img
+          class="bg-grey-darken-3"
+          max-height="80vh"
+          :src="lightboxPhoto.url"
+        />
+
+        <v-card-actions>
+          <span class="text-body-2">{{ lightboxPhoto.caption }}</span>
+          <v-spacer />
+
+          <v-btn
+            v-if="canManage"
+            color="error"
+            :loading="deletingPhoto"
+            prepend-icon="mdi-delete-outline"
+            variant="text"
+            @click="deleteLightboxPhoto"
+          >{{ t('common.delete') }}</v-btn>
+
+          <v-btn variant="text" @click="lightboxDialog = false">{{ t('common.close') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>

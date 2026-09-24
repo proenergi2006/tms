@@ -8,6 +8,8 @@ use App\Modules\Fleet\Http\Resources\FleetResource;
 use App\Modules\Fleet\Models\Fleet;
 use App\Modules\Fleet\Models\FleetLegalDoc;
 use App\Modules\Fleet\Services\FleetReliabilityService;
+use App\Modules\Maintenance\Http\Resources\AttachmentResource;
+use App\Modules\Maintenance\Models\Attachment;
 use App\Modules\MasterData\Models\Branch;
 use App\Modules\SyopIntegration\Services\SyopSyncService;
 use Illuminate\Http\Request;
@@ -22,7 +24,7 @@ class FleetController extends Controller
         $search = $request->string('search')->trim();
 
         $query = Fleet::query()
-            ->with('branch')
+            ->with(['branch', 'attachments'])
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->query('status')))
             ->when($search->isNotEmpty(), fn ($q) => $q->where(
                 fn ($qq) => $qq->where('plate_number', 'like', "%{$search}%")
@@ -245,7 +247,7 @@ class FleetController extends Controller
             abort(403, 'Anda hanya dapat melihat armada cabang Anda sendiri.');
         }
 
-        return new FleetResource($fleet->load('branch'));
+        return new FleetResource($fleet->load(['branch', 'attachments']));
     }
 
     public function update(FleetRequest $request, Fleet $fleet)
@@ -265,12 +267,27 @@ class FleetController extends Controller
     }
 
     /**
-     * Foto armada — ditampilkan di kartu daftar & header halaman detail.
-     * Endpoint terpisah dari update() biasa (yang mengirim JSON) supaya
-     * upload multipart tidak perlu mengubah FleetRequest/alur form utama.
-     * Menimpa (bukan menumpuk) foto lama — hanya satu foto per armada.
+     * Daftar foto armada (depan/belakang/kiri/kanan/dst) — dipisah dari
+     * FleetResource::show() supaya bisa dipanggil ulang sendiri setelah
+     * upload/hapus foto tanpa perlu reload seluruh data armada.
      */
-    public function uploadPhoto(Request $request, Fleet $fleet)
+    public function photos(Request $request, Fleet $fleet)
+    {
+        if (! $request->user()->canAccessBranch($fleet->branch_id)) {
+            abort(403, 'Anda hanya dapat melihat armada cabang Anda sendiri.');
+        }
+
+        return AttachmentResource::collection($fleet->attachments);
+    }
+
+    /**
+     * Tambah satu foto armada — TIDAK menimpa foto lain (beda dari
+     * implementasi awal yang cuma 1 foto per armada), supaya Tim Logistik
+     * bisa dokumentasikan kondisi dari beberapa sisi (depan/belakang/kiri/
+     * kanan) dalam satu armada. `caption` bebas teks (mis. "Depan") supaya
+     * tidak perlu enum baku — frontend cuma menyarankan beberapa label umum.
+     */
+    public function storePhoto(Request $request, Fleet $fleet)
     {
         if (! $request->user()->canAccessBranch($fleet->branch_id)) {
             abort(403, 'Anda hanya dapat mengelola armada cabang Anda sendiri.');
@@ -279,19 +296,35 @@ class FleetController extends Controller
         // 10MB — cukup longgar untuk foto langsung dari kamera HP (biasanya
         // 3-8MB), yang lewat storeFleetPhoto() di bawah tetap dikompres
         // jadi jauh lebih kecil sebelum disimpan.
-        $request->validate([
+        $data = $request->validate([
             'photo' => ['required', 'image', 'max:10240'],
+            'caption' => ['nullable', 'string', 'max:255'],
         ]);
 
-        if ($fleet->photo_path) {
-            Storage::disk('public')->delete($fleet->photo_path);
+        $attachment = $fleet->attachments()->create([
+            'file_path' => $this->storeFleetPhoto($request->file('photo')),
+            'caption' => $data['caption'] ?? null,
+            'uploaded_by' => $request->user()->id,
+            'uploaded_at' => now(),
+        ]);
+
+        return (new AttachmentResource($attachment))->response()->setStatusCode(201);
+    }
+
+    public function destroyPhoto(Request $request, Fleet $fleet, Attachment $photo)
+    {
+        if (! $request->user()->canAccessBranch($fleet->branch_id)) {
+            abort(403, 'Anda hanya dapat mengelola armada cabang Anda sendiri.');
         }
 
-        $fleet->update([
-            'photo_path' => $this->storeFleetPhoto($request->file('photo')),
-        ]);
+        if ($photo->attachable_type !== 'fleet' || $photo->attachable_id !== $fleet->id) {
+            abort(404);
+        }
 
-        return new FleetResource($fleet->fresh('branch'));
+        Storage::disk('public')->delete($photo->file_path);
+        $photo->delete();
+
+        return response()->noContent();
     }
 
     /**
@@ -382,7 +415,7 @@ class FleetController extends Controller
      */
     public function trashed(Request $request)
     {
-        $query = Fleet::onlyTrashed()->with('branch');
+        $query = Fleet::onlyTrashed()->with(['branch', 'attachments']);
 
         if ($request->user()->isBranchScoped()) {
             $query->where('branch_id', $request->user()->branch_id);
@@ -423,6 +456,6 @@ class FleetController extends Controller
             $fleet->update(['branch_id' => $data['branch_id']]);
         }
 
-        return new FleetResource($fleet->fresh('branch'));
+        return new FleetResource($fleet->fresh(['branch', 'attachments']));
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Modules\Fleet\Models\Fleet;
 use App\Modules\Maintenance\Models\Request as MaintenanceRequest;
 use App\Modules\Maintenance\Models\WorkOrder;
 use App\Modules\Maintenance\Models\WorkOrderItem;
@@ -37,6 +38,7 @@ class AppServiceProvider extends ServiceProvider
             'request' => MaintenanceRequest::class,
             'work_order' => WorkOrder::class,
             'work_order_item' => WorkOrderItem::class,
+            'fleet' => Fleet::class,
         ]);
 
         // Model pada app/Modules/* tidak mengikuti struktur namespace default

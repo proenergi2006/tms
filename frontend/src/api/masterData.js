@@ -20,12 +20,17 @@ export const fleetsApi = {
   syncFromSyop: params => api.post('/fleets/sync-syop', null, { params }),
   trashed: params => api.get('/fleets-trashed', { params }),
   restore: (id, data) => api.post(`/fleets/${id}/restore`, data),
-  uploadPhoto: (id, file) => {
+  photos: id => api.get(`/fleets/${id}/photos`),
+  addPhoto: (id, file, caption) => {
     const form = new FormData()
     form.append('photo', file)
+    if (caption) {
+      form.append('caption', caption)
+    }
 
-    return api.post(`/fleets/${id}/photo`, form, { headers: { 'Content-Type': 'multipart/form-data' } })
+    return api.post(`/fleets/${id}/photos`, form, { headers: { 'Content-Type': 'multipart/form-data' } })
   },
+  removePhoto: (id, photoId) => api.delete(`/fleets/${id}/photos/${photoId}`),
 }
 
 export const driversApi = {

@@ -2,6 +2,7 @@
 
 namespace App\Modules\Fleet\Models;
 
+use App\Modules\Maintenance\Models\Attachment;
 use App\Modules\Maintenance\Models\MaintenanceHistory;
 use App\Modules\Maintenance\Models\Request as MaintenanceRequest;
 use App\Modules\MasterData\Models\Branch;
@@ -10,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
@@ -21,7 +23,7 @@ class Fleet extends Model
         'syop_fleet_id',
         'plate_number', 'fleet_type', 'brand', 'model', 'year',
         'chassis_number', 'engine_number', 'keur_number',
-        'capacity', 'photo_path', 'purchase_price', 'ownership', 'leasing_status', 'b3_dishub_number', 'mutation_status',
+        'capacity', 'purchase_price', 'ownership', 'leasing_status', 'b3_dishub_number', 'mutation_status',
         'branch_id', 'status', 'last_inspection_at',
         'service_interval_km', 'service_interval_engine_hours', 'service_interval_months',
         'last_service_at', 'last_service_odometer', 'last_service_engine_hours',
@@ -165,5 +167,17 @@ class Fleet extends Model
     public function revenues(): HasMany
     {
         return $this->hasMany(FleetRevenue::class);
+    }
+
+    /**
+     * Foto armada — bisa lebih dari satu (depan/belakang/kiri/kanan),
+     * disimpan lewat tabel attachments polymorphic yang sama dengan
+     * Request/WorkOrder, bukan kolom tunggal. Diurutkan dari yang paling
+     * lama diunggah supaya foto pertama = foto sampul yang konsisten
+     * dipakai sebagai thumbnail di kartu daftar.
+     */
+    public function attachments(): MorphMany
+    {
+        return $this->morphMany(Attachment::class, 'attachable')->orderBy('uploaded_at');
     }
 }

@@ -2,10 +2,11 @@
 
 namespace App\Modules\Fleet\Http\Resources;
 
+use App\Modules\Maintenance\Http\Resources\AttachmentResource;
+use App\Modules\Maintenance\Services\AttachmentService;
 use App\Modules\MasterData\Http\Resources\BranchResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Storage;
 
 class FleetResource extends JsonResource
 {
@@ -22,7 +23,17 @@ class FleetResource extends JsonResource
             'engine_number' => $this->engine_number,
             'keur_number' => $this->keur_number,
             'capacity' => $this->capacity,
-            'photo_url' => $this->photo_path ? Storage::disk('public')->url($this->photo_path) : null,
+            // Foto sampul (thumbnail kartu daftar) = foto pertama yang
+            // diunggah — lihat Fleet::attachments() untuk urutannya. Daftar
+            // lengkap semua foto (untuk galeri di halaman detail) ada di
+            // 'photos' di bawah.
+            'photo_url' => $this->whenLoaded(
+                'attachments',
+                fn () => $this->attachments->isNotEmpty()
+                    ? app(AttachmentService::class)->url($this->attachments->first())
+                    : null
+            ),
+            'photos' => AttachmentResource::collection($this->whenLoaded('attachments')),
             'purchase_price' => $this->purchase_price,
             'ownership' => $this->ownership,
             'leasing_status' => $this->leasing_status,

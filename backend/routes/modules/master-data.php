@@ -52,7 +52,10 @@ Route::post('fleets/sync-syop', [FleetController::class, 'syncFromSyop'])->middl
 Route::get('fleets-trashed', [FleetController::class, 'trashed'])->middleware('permission:master-data.manage');
 Route::post('fleets/{id}/restore', [FleetController::class, 'restore'])->middleware('permission:master-data.manage');
 
-Route::post('fleets/{fleet}/photo', [FleetController::class, 'uploadPhoto'])->middleware('permission:master-data.manage');
+// Foto armada — bisa lebih dari satu (depan/belakang/kiri/kanan).
+Route::get('fleets/{fleet}/photos', [FleetController::class, 'photos'])->middleware('permission:master-data.view');
+Route::post('fleets/{fleet}/photos', [FleetController::class, 'storePhoto'])->middleware('permission:master-data.manage');
+Route::delete('fleets/{fleet}/photos/{photo}', [FleetController::class, 'destroyPhoto'])->middleware('permission:master-data.manage');
 
 Route::apiResource('cost-types', CostTypeController::class)
     ->parameters(['cost-types' => 'costType'])
