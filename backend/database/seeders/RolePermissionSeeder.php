@@ -19,6 +19,11 @@ class RolePermissionSeeder extends Seeder
      * Katalog permission. Kunci = nama permission, nilai = daftar role yang
      * memilikinya. admin_sistem selalu mendapat semua permission (super role
      * konfigurasi sistem — PRD Bagian 10).
+     *
+     * operational_manager sengaja SELALU disandingkan persis dengan manajemen
+     * di setiap baris — fungsinya diminta identik (role terpisah cuma karena
+     * kebutuhan penamaan jabatan, bukan cakupan akses yang beda). Kalau nanti
+     * permission manajemen berubah, sesuaikan operational_manager juga.
      */
     private const CATALOG = [
         // Master Data (fleets, drivers, mechanics, vendors, warehouses,
@@ -27,7 +32,7 @@ class RolePermissionSeeder extends Seeder
         // sparepart.manage) — dia boleh full CRUD sparepart, tapi cuma boleh
         // lihat data master lain (mirip Fleet Operations dari sisi visibilitas,
         // tapi tanpa wewenang approval/edit pengajuan Fleet Operations).
-        'master-data.view' => ['sa', 'fleet_operations', 'kepala_pool', 'tim_logistik', 'logistik_ho', 'admin_it_ga', 'manajemen', 'admin_logistik'],
+        'master-data.view' => ['sa', 'fleet_operations', 'kepala_pool', 'tim_logistik', 'logistik_ho', 'admin_it_ga', 'manajemen', 'operational_manager', 'admin_logistik'],
         'master-data.manage' => ['fleet_operations', 'tim_logistik'],
 
         // Cabang (branches) sengaja DIPISAH dari master-data.manage — ini
@@ -57,7 +62,7 @@ class RolePermissionSeeder extends Seeder
         // WorkOrderController::realizeItems()) karena mekanik dihapus. Tim
         // Logistik TIDAK terlibat di eksekusi Work Order.
         'request.create' => ['sa'],
-        'request.view' => ['sa', 'fleet_operations', 'kepala_pool', 'tim_logistik', 'logistik_ho', 'manajemen', 'admin_logistik'],
+        'request.view' => ['sa', 'fleet_operations', 'kepala_pool', 'tim_logistik', 'logistik_ho', 'manajemen', 'operational_manager', 'admin_logistik'],
         'work-order.manage' => ['sa'],
         'work-order.update-status' => ['sa'],
 
@@ -92,12 +97,39 @@ class RolePermissionSeeder extends Seeder
         // fleet.view/report.view/request.view/master-data.view TANPA
         // pembatasan cabang — bisa melihat proses semua cabang sekaligus,
         // murni pemantauan (tidak ada permission manage/approval sama sekali).
-        'fleet.view' => ['sa', 'fleet_operations', 'kepala_pool', 'tim_logistik', 'logistik_ho', 'manajemen', 'admin_logistik'],
+        'fleet.view' => ['sa', 'fleet_operations', 'kepala_pool', 'tim_logistik', 'logistik_ho', 'manajemen', 'operational_manager', 'admin_logistik'],
         'fleet.manage' => ['tim_logistik'],
-        'report.view' => ['fleet_operations', 'tim_logistik', 'logistik_ho', 'manajemen', 'admin_logistik'],
+        'report.view' => ['fleet_operations', 'tim_logistik', 'logistik_ho', 'manajemen', 'operational_manager', 'admin_logistik'],
+
+        // Fleet Monitoring — posisi live driver via integrasi OSPOD (repo
+        // terpisah, App\Modules\FleetMonitoring). SAMA role dengan fleet.view
+        // karena ini perluasan visibilitas armada yang sudah ada, murni
+        // pemantauan (tidak ada aksi manage), jadi tidak perlu role terpisah.
+        'fleet-monitoring.view' => ['sa', 'fleet_operations', 'kepala_pool', 'tim_logistik', 'logistik_ho', 'manajemen', 'operational_manager', 'admin_logistik'],
+
+        // Pengiriman — daftar/detail shipment + foto bukti/tanda tangan via
+        // integrasi OSPOD (repo terpisah, App\Modules\Shipment). SAMA role
+        // dengan fleet-monitoring.view (murni pemantauan, audiens sama)
+        // walau permission-nya sengaja dipisah karena data yang ditampilkan
+        // beda (riwayat & bukti pengiriman, bukan posisi live).
+        'shipment.view' => ['sa', 'fleet_operations', 'kepala_pool', 'tim_logistik', 'logistik_ho', 'manajemen', 'operational_manager', 'admin_logistik'],
+
+        // Akun login OSPOD (pod_drivers) — TERPISAH dari master-data.view/
+        // manage (itu data master Driver TMS sendiri: lisensi/cabang/armada,
+        // beda resource). Ini kredensial LOGIN aplikasi driver (No. Telepon +
+        // PIN) — sebelumnya SATU-SATUNYA cara reset PIN driver adalah admin
+        // menjalankan `php artisan pod:provision-driver` manual di server
+        // OSPOD (lihat catatan di OSPOD mobile/login_screen.dart).
+        // pod-account.view dibagi luas (dispatcher/manajemen perlu tahu
+        // siapa yang punya akun & status terkuncinya), pod-account.manage
+        // lebih sempit — admin_it_ga (pemilik akses infrastruktur/akun) &
+        // tim_logistik (paling sering menerima laporan "lupa PIN" dari
+        // driver di lapangan, lihat tombol "Lupa PIN?" di app driver).
+        'pod-account.view' => ['sa', 'fleet_operations', 'kepala_pool', 'tim_logistik', 'logistik_ho', 'admin_it_ga', 'manajemen', 'operational_manager'],
+        'pod-account.manage' => ['admin_it_ga', 'tim_logistik'],
 
         // Asset Registry
-        'asset.view' => ['admin_it_ga', 'manajemen'],
+        'asset.view' => ['admin_it_ga', 'manajemen', 'operational_manager'],
         'asset.manage' => ['admin_it_ga'],
 
         // Manajemen tahap approval (Approval Workflow Engine dinamis) —

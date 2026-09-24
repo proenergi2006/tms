@@ -29,7 +29,7 @@ class User extends Authenticatable
      * fleet_operations TIDAK lagi di sini: sekarang branch-scoped persis
      * seperti sa/kepala_pool/tim_logistik.
      */
-    private const GLOBAL_ROLES = ['admin_it_ga', 'admin_sistem', 'manajemen', 'logistik_ho'];
+    private const GLOBAL_ROLES = ['admin_it_ga', 'admin_sistem', 'manajemen', 'logistik_ho', 'operational_manager'];
 
     /**
      * Autentikasi TMS: dua jalur berdampingan, masing-masing pakai

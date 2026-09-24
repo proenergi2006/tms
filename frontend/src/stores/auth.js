@@ -69,7 +69,7 @@ export const useAuthStore = defineStore('auth', () => {
   // malah ke-lock ke cabangnya sendiri di UI (fleet list, filter cabang
   // Laporan Profitabilitas, dll). Jaga tetap sama persis dengan
   // User::GLOBAL_ROLES di backend kalau daftar role berubah lagi.
-  const GLOBAL_ROLES = new Set(['admin_it_ga', 'admin_sistem', 'manajemen', 'logistik_ho'])
+  const GLOBAL_ROLES = new Set(['admin_it_ga', 'admin_sistem', 'manajemen', 'logistik_ho', 'operational_manager'])
   const isBranchScoped = computed(() => !!branchId.value && !GLOBAL_ROLES.has(role.value))
 
   function setSession (newToken, newUser, options = {}) {

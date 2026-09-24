@@ -35,7 +35,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $roleNames = ['sa', 'fleet_operations', 'kepala_pool', 'tim_logistik', 'admin_logistik', 'logistik_ho', 'admin_it_ga', 'admin_sistem', 'manajemen'];
+        $roleNames = ['sa', 'fleet_operations', 'kepala_pool', 'tim_logistik', 'admin_logistik', 'logistik_ho', 'admin_it_ga', 'admin_sistem', 'manajemen', 'operational_manager'];
         $roles = collect($roleNames)->mapWithKeys(fn ($name) => [$name => Role::firstOrCreate(['name' => $name])]);
 
         $this->call(RolePermissionSeeder::class);
@@ -173,7 +173,7 @@ class DatabaseSeeder extends Seeder
         // Role global (Head Office) — satu user, tidak dibatasi cabang
         // (User::isBranchScoped() otomatis false). branch_id diisi Jakarta
         // hanya sebagai info lokasi kantor pusat, bukan pembatas akses.
-        foreach (['admin_it_ga', 'admin_sistem', 'manajemen'] as $roleName) {
+        foreach (['admin_it_ga', 'admin_sistem', 'manajemen', 'operational_manager'] as $roleName) {
             User::firstOrCreate(
                 ['email' => "{$roleName}@tms.test"],
                 [

@@ -150,6 +150,7 @@ export default {
       admin_it_ga: 'IT & GA Admin',
       admin_sistem: 'System Admin',
       manajemen: 'Management',
+      operational_manager: 'Operational Manager',
       fleet_operations: 'Fleet Operations',
     },
   },

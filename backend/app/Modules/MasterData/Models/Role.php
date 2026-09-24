@@ -44,7 +44,7 @@ class Role extends Model
      */
     public const SYSTEM_ROLES = [
         'sa', 'fleet_operations', 'kepala_pool', 'tim_logistik', 'logistik_ho',
-        'admin_it_ga', 'admin_sistem', 'manajemen',
+        'admin_it_ga', 'admin_sistem', 'manajemen', 'operational_manager',
     ];
 
     public function isSystemRole(): bool
