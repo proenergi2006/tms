@@ -276,7 +276,12 @@
         sm="6"
       >
         <v-card :loading="loading" @click="router.push(`/fleets/${fleet.id}`)">
-          <v-img v-if="fleet.photo_url" cover height="140" :src="fleet.photo_url" />
+          <v-img
+            v-if="fleet.photo_url"
+            class="bg-grey-lighten-3"
+            height="140"
+            :src="fleet.photo_url"
+          />
 
           <div v-else class="d-flex align-center justify-center bg-grey-lighten-3" style="height: 140px">
             <v-icon color="grey" icon="mdi-truck-outline" size="48" />

@@ -398,8 +398,7 @@
       <v-card-text class="d-flex align-center ga-4">
         <v-img
           v-if="fleet.photo_url"
-          class="rounded"
-          cover
+          class="rounded bg-grey-lighten-3"
           height="120"
           :src="fleet.photo_url"
           width="160"
@@ -1014,8 +1013,7 @@
         <v-card-text>
           <v-img
             v-if="photoPreviewUrl"
-            class="rounded mb-4"
-            cover
+            class="rounded mb-4 bg-grey-lighten-3"
             height="180"
             :src="photoPreviewUrl"
           />
