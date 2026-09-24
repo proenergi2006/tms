@@ -353,6 +353,8 @@ export default {
   fleets: {
     title: 'Armada',
     add: 'Tambah Armada',
+    deleteTitle: 'Hapus Armada',
+    confirmDelete: 'Hapus armada "{plate}"? Data ini masih bisa dipulihkan lewat database bila diperlukan, tapi tidak akan muncul lagi di TMS sampai dipulihkan.',
     plateNumber: 'Nomor Polisi',
     fleetType: 'Jenis Armada (mis. Tronton, Tangki)',
     brand: 'Merek',

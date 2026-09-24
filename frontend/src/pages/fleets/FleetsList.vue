@@ -3,6 +3,7 @@
   import { useI18n } from 'vue-i18n'
   import { useRouter } from 'vue-router'
   import { branchesApi, fleetsApi } from '@/api/masterData'
+  import ConfirmDialog from '@/components/ConfirmDialog.vue'
   import StatusChip from '@/components/StatusChip.vue'
   import { useAuthStore } from '@/stores/auth'
 
@@ -147,6 +148,30 @@
     syncBranchDialog.value = false
     await runSync(syncBranchId.value)
   }
+
+  // -- Hapus Armada --
+  // Soft-delete (lihat FleetController::destroy()) — nomor polisi tetap
+  // "terkunci" di DB sehingga sinkronisasi SYOP berikutnya tidak
+  // membuatnya lagi selama baris SYOP sumbernya sendiri belum dibetulkan.
+  const deleteDialog = ref(false)
+  const deleting = ref(false)
+  const fleetToDelete = ref(null)
+
+  function confirmDelete (fleet) {
+    fleetToDelete.value = fleet
+    deleteDialog.value = true
+  }
+
+  async function doDelete () {
+    deleting.value = true
+    try {
+      await fleetsApi.remove(fleetToDelete.value.id)
+      deleteDialog.value = false
+      await load()
+    } finally {
+      deleting.value = false
+    }
+  }
 </script>
 
 <template>
@@ -202,7 +227,18 @@
           <v-card-text>
             <div class="d-flex align-center justify-space-between">
               <div class="text-h6">{{ fleet.plate_number }}</div>
-              <StatusChip :status="fleet.status" />
+
+              <div class="d-flex align-center ga-1">
+                <StatusChip :status="fleet.status" />
+
+                <v-btn
+                  v-if="canManage"
+                  icon="mdi-delete-outline"
+                  size="small"
+                  variant="text"
+                  @click.stop="confirmDelete(fleet)"
+                />
+              </div>
             </div>
 
             <div class="text-medium-emphasis">{{ fleet.fleet_type }} — {{ fleet.brand }} {{ fleet.model }}</div>
@@ -337,5 +373,15 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <ConfirmDialog
+      v-model="deleteDialog"
+      confirm-color="error"
+      :confirm-text="t('common.delete')"
+      :loading="deleting"
+      :message="t('fleets.confirmDelete', { plate: fleetToDelete?.plate_number })"
+      :title="t('fleets.deleteTitle')"
+      @confirm="doDelete"
+    />
   </div>
 </template>

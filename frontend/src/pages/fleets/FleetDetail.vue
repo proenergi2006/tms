@@ -1,15 +1,17 @@
 <script setup>
   import { computed, onMounted, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { useRoute } from 'vue-router'
+  import { useRoute, useRouter } from 'vue-router'
   import { fleetHistoryApi } from '@/api/fleetHistory'
   import { branchesApi, fleetsApi } from '@/api/masterData'
+  import ConfirmDialog from '@/components/ConfirmDialog.vue'
   import StatusChip from '@/components/StatusChip.vue'
   import { useAuthStore } from '@/stores/auth'
   import { formatCurrency, formatDate, formatDuration } from '@/utils/format'
 
   // Detail Armada — Wireframe Document Bagian 2.5 (tab Profit-Loss + tab lain).
   const route = useRoute()
+  const router = useRouter()
   const auth = useAuthStore()
   const { t } = useI18n()
   const canManage = auth.hasPermission('master-data.manage')
@@ -188,6 +190,20 @@
     }
   }
 
+  // -- Hapus Armada --
+  const deleteDialog = ref(false)
+  const deleting = ref(false)
+
+  async function doDeleteFleet () {
+    deleting.value = true
+    try {
+      await fleetsApi.remove(fleetId)
+      router.push('/fleets')
+    } finally {
+      deleting.value = false
+    }
+  }
+
   // -- Legal doc dialog --
   const legalDialog = ref(false)
   const savingLegal = ref(false)
@@ -334,6 +350,14 @@
       <div class="text-medium-emphasis">{{ fleet.fleet_type }} — {{ fleet.brand }} {{ fleet.model }}</div>
       <v-spacer />
       <v-btn v-if="canManage" prepend-icon="mdi-pencil-outline" variant="tonal" @click="openEditFleet">{{ t('fleets.editFleet') }}</v-btn>
+
+      <v-btn
+        v-if="canManage"
+        color="error"
+        prepend-icon="mdi-delete-outline"
+        variant="tonal"
+        @click="deleteDialog = true"
+      >{{ t('common.delete') }}</v-btn>
     </div>
 
     <v-card class="mb-4">
@@ -1009,5 +1033,15 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <ConfirmDialog
+      v-model="deleteDialog"
+      confirm-color="error"
+      :confirm-text="t('common.delete')"
+      :loading="deleting"
+      :message="t('fleets.confirmDelete', { plate: fleet.plate_number })"
+      :title="t('fleets.deleteTitle')"
+      @confirm="doDeleteFleet"
+    />
   </div>
 </template>

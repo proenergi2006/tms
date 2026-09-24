@@ -353,6 +353,8 @@ export default {
   fleets: {
     title: 'Fleets',
     add: 'Add Fleet',
+    deleteTitle: 'Delete Fleet',
+    confirmDelete: 'Delete fleet "{plate}"? This can still be restored from the database if needed, but it will disappear from TMS until then.',
     plateNumber: 'Plate Number',
     fleetType: 'Fleet Type (e.g. Tronton, Tanker)',
     brand: 'Brand',
