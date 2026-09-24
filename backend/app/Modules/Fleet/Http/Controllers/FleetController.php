@@ -271,4 +271,57 @@ class FleetController extends Controller
 
         return response()->noContent();
     }
+
+    /**
+     * Daftar armada yang sudah di-soft-delete — TIDAK ada UI/API sebelumnya
+     * untuk melihat/memulihkan ini sama sekali (satu-satunya jalan dulu:
+     * php artisan tinker langsung di server). Role bercabang hanya melihat
+     * milik cabangnya sendiri (branch_id SEBELUM dihapus), sama seperti
+     * index() biasa.
+     */
+    public function trashed(Request $request)
+    {
+        $query = Fleet::onlyTrashed()->with('branch');
+
+        if ($request->user()->isBranchScoped()) {
+            $query->where('branch_id', $request->user()->branch_id);
+        } elseif ($request->filled('branch_id')) {
+            $query->where('branch_id', $request->query('branch_id'));
+        }
+
+        $fleets = $query->orderByDesc('deleted_at')->paginate($request->integer('per_page', 15));
+
+        return FleetResource::collection($fleets);
+    }
+
+    /**
+     * Pulihkan armada yang sudah dihapus — SEKALIGUS boleh pindah cabang
+     * dalam satu aksi (kasus nyata: armada dihapus manual karena salah
+     * cabang, ternyata butuh dipulihkan ke cabang yang benar, bukan cabang
+     * asalnya). Role bercabang dipaksa ke cabangnya sendiri (konsisten
+     * dengan store()/update()) — cuma role global yang bebas memilih
+     * cabang tujuan.
+     */
+    public function restore(Request $request, int $id)
+    {
+        $fleet = Fleet::onlyTrashed()->findOrFail($id);
+
+        if (! $request->user()->canAccessBranch($fleet->branch_id)) {
+            abort(403, 'Anda hanya dapat memulihkan armada cabang Anda sendiri.');
+        }
+
+        $data = $request->validate([
+            'branch_id' => ['nullable', 'exists:branches,id'],
+        ]);
+
+        $fleet->restore();
+
+        if ($request->user()->isBranchScoped()) {
+            $fleet->update(['branch_id' => $request->user()->branch_id]);
+        } elseif (! empty($data['branch_id'])) {
+            $fleet->update(['branch_id' => $data['branch_id']]);
+        }
+
+        return new FleetResource($fleet->fresh('branch'));
+    }
 }

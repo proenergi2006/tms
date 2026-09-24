@@ -172,6 +172,50 @@
       deleting.value = false
     }
   }
+
+  // -- Armada Terhapus (pulihkan) --
+  // Sebelumnya tidak ada jalur UI/API sama sekali untuk ini — satu-satunya
+  // cara memulihkan armada yang sudah di-soft-delete adalah lewat tinker
+  // langsung di server.
+  const trashedDialog = ref(false)
+  const trashedLoading = ref(false)
+  const trashedFleets = ref([])
+
+  async function openTrashed () {
+    trashedDialog.value = true
+    trashedLoading.value = true
+    try {
+      const { data } = await fleetsApi.trashed({ per_page: 100 })
+      trashedFleets.value = data.data
+    } finally {
+      trashedLoading.value = false
+    }
+  }
+
+  const restoreDialog = ref(false)
+  const restoring = ref(false)
+  const fleetToRestore = ref(null)
+  const restoreBranchId = ref(null)
+
+  function openRestore (fleet) {
+    fleetToRestore.value = fleet
+    // Default ke cabang asalnya — role global boleh ganti sebelum konfirmasi
+    // (mis. armada ternyata sudah pindah cabang sejak sebelum dihapus).
+    restoreBranchId.value = auth.isBranchScoped ? auth.branchId : fleet.branch_id
+    restoreDialog.value = true
+  }
+
+  async function doRestore () {
+    restoring.value = true
+    try {
+      await fleetsApi.restore(fleetToRestore.value.id, { branch_id: restoreBranchId.value })
+      restoreDialog.value = false
+      trashedFleets.value = trashedFleets.value.filter(f => f.id !== fleetToRestore.value.id)
+      await load()
+    } finally {
+      restoring.value = false
+    }
+  }
 </script>
 
 <template>
@@ -200,6 +244,14 @@
         variant="tonal"
         @click="openSync"
       >{{ t('fleets.syncFromSyop') }}</v-btn>
+
+      <v-btn
+        v-if="canManage"
+        class="mr-2"
+        prepend-icon="mdi-delete-restore"
+        variant="tonal"
+        @click="openTrashed"
+      >{{ t('fleets.trashed') }}</v-btn>
 
       <v-btn v-if="canManage" color="primary" prepend-icon="mdi-plus" @click="openCreate">{{ t('fleets.add') }}</v-btn>
     </div>
@@ -383,5 +435,73 @@
       :title="t('fleets.deleteTitle')"
       @confirm="doDelete"
     />
+
+    <v-dialog v-model="trashedDialog" max-width="640">
+      <v-card>
+        <v-card-title>{{ t('fleets.trashed') }}</v-card-title>
+
+        <v-card-text>
+          <v-alert v-if="!trashedLoading && trashedFleets.length === 0" type="info" variant="tonal">
+            {{ t('fleets.trashedEmpty') }}
+          </v-alert>
+
+          <v-list v-else lines="two">
+            <v-list-item
+              v-for="fleet in trashedFleets"
+              :key="fleet.id"
+              :subtitle="`${fleet.branch?.name ?? '-'} · ${t('fleets.deletedAt')} ${new Date(fleet.deleted_at).toLocaleDateString('id-ID')}`"
+              :title="fleet.plate_number"
+            >
+              <template #append>
+                <v-btn
+                  color="primary"
+                  prepend-icon="mdi-delete-restore"
+                  size="small"
+                  variant="tonal"
+                  @click="openRestore(fleet)"
+                >{{ t('fleets.restore') }}</v-btn>
+              </template>
+            </v-list-item>
+          </v-list>
+        </v-card-text>
+
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="trashedDialog = false">{{ t('common.close') }}</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="restoreDialog" max-width="420">
+      <v-card>
+        <v-card-title>{{ t('fleets.restore') }}</v-card-title>
+
+        <v-card-text>
+          <p class="mb-4">{{ t('fleets.confirmRestore', { plate: fleetToRestore?.plate_number }) }}</p>
+
+          <v-select
+            v-model="restoreBranchId"
+            :disabled="auth.isBranchScoped"
+            item-title="name"
+            item-value="id"
+            :items="branches"
+            :label="t('common.branch')"
+          />
+        </v-card-text>
+
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="restoreDialog = false">{{ t('common.cancel') }}</v-btn>
+
+          <v-btn
+            color="primary"
+            :disabled="!restoreBranchId"
+            :loading="restoring"
+            variant="flat"
+            @click="doRestore"
+          >{{ t('fleets.restore') }}</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>

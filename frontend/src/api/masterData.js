@@ -18,6 +18,8 @@ export const fleetsApi = {
   legalWarnings: params => api.get('/fleets-legal-warnings', { params }),
   reliabilitySummary: params => api.get('/fleets-reliability-summary', { params }),
   syncFromSyop: params => api.post('/fleets/sync-syop', null, { params }),
+  trashed: params => api.get('/fleets-trashed', { params }),
+  restore: (id, data) => api.post(`/fleets/${id}/restore`, data),
 }
 
 export const driversApi = {

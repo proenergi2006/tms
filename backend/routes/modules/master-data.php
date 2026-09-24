@@ -47,6 +47,11 @@ Route::apiResource('spareparts', SparepartController::class)->only(['store', 'up
 Route::post('drivers/sync-syop', [DriverController::class, 'syncFromSyop'])->middleware('permission:master-data.manage');
 Route::post('fleets/sync-syop', [FleetController::class, 'syncFromSyop'])->middleware('permission:master-data.manage');
 
+// Lihat & pulihkan armada yang sudah di-soft-delete — sebelumnya cuma bisa
+// lewat tinker langsung di server, tidak ada jalur UI/API sama sekali.
+Route::get('fleets-trashed', [FleetController::class, 'trashed'])->middleware('permission:master-data.manage');
+Route::post('fleets/{id}/restore', [FleetController::class, 'restore'])->middleware('permission:master-data.manage');
+
 Route::apiResource('cost-types', CostTypeController::class)
     ->parameters(['cost-types' => 'costType'])
     ->only(['index', 'show'])
