@@ -11,7 +11,9 @@ use App\Modules\Fleet\Services\FleetReliabilityService;
 use App\Modules\MasterData\Models\Branch;
 use App\Modules\SyopIntegration\Services\SyopSyncService;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class FleetController extends Controller
 {
@@ -274,8 +276,11 @@ class FleetController extends Controller
             abort(403, 'Anda hanya dapat mengelola armada cabang Anda sendiri.');
         }
 
+        // 10MB — cukup longgar untuk foto langsung dari kamera HP (biasanya
+        // 3-8MB), yang lewat storeFleetPhoto() di bawah tetap dikompres
+        // jadi jauh lebih kecil sebelum disimpan.
         $request->validate([
-            'photo' => ['required', 'image', 'max:5120'],
+            'photo' => ['required', 'image', 'max:10240'],
         ]);
 
         if ($fleet->photo_path) {
@@ -283,10 +288,78 @@ class FleetController extends Controller
         }
 
         $fleet->update([
-            'photo_path' => $request->file('photo')->store('fleets', 'public'),
+            'photo_path' => $this->storeFleetPhoto($request->file('photo')),
         ]);
 
         return new FleetResource($fleet->fresh('branch'));
+    }
+
+    /**
+     * Foto asli dari kamera HP sering berukuran besar (resolusi 4000x3000+,
+     * beberapa MB) dan sebagian punya tag EXIF orientation (potret/lanskap)
+     * yang TIDAK otomatis dihormati GD — kalau disimpan mentah, foto bisa
+     * tampil miring/kesamping di kartu daftar & detail meski `object-fit:
+     * cover` di frontend sudah benar. Di sini foto diluruskan sesuai EXIF,
+     * di-resize ke maksimum 1600px sisi terpanjang (foto yang sudah lebih
+     * kecil tidak di-upscale), lalu dikonversi ke JPEG kualitas 82 supaya
+     * ukuran file konsisten & ringan.
+     */
+    private function storeFleetPhoto(UploadedFile $file): string
+    {
+        $image = @imagecreatefromstring(file_get_contents($file->getRealPath()));
+
+        if ($image === false) {
+            // Format yang tidak dikenali GD (jarang terjadi karena validasi
+            // 'image' di atas) — simpan apa adanya daripada gagal total.
+            return $file->store('fleets', 'public');
+        }
+
+        $image = $this->applyExifOrientation($image, $file);
+
+        $width = imagesx($image);
+        $height = imagesy($image);
+        $maxDimension = 1600;
+
+        if (max($width, $height) > $maxDimension) {
+            $ratio = $maxDimension / max($width, $height);
+            $newWidth = (int) round($width * $ratio);
+            $newHeight = (int) round($height * $ratio);
+
+            $resized = imagecreatetruecolor($newWidth, $newHeight);
+            imagecopyresampled($resized, $image, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+            imagedestroy($image);
+            $image = $resized;
+        }
+
+        ob_start();
+        imagejpeg($image, null, 82);
+        $contents = ob_get_clean();
+        imagedestroy($image);
+
+        $path = 'fleets/'.Str::uuid().'.jpg';
+        Storage::disk('public')->put($path, $contents);
+
+        return $path;
+    }
+
+    private function applyExifOrientation($image, UploadedFile $file)
+    {
+        // exif_read_data hanya mengenali JPEG — format lain (PNG/WebP) tidak
+        // punya tag orientation sama sekali, panggil exif_read_data untuk
+        // itu cuma menghasilkan warning tanpa manfaat.
+        if ($file->getMimeType() !== 'image/jpeg') {
+            return $image;
+        }
+
+        $exif = @exif_read_data($file->getRealPath());
+        $orientation = $exif['Orientation'] ?? null;
+
+        return match ($orientation) {
+            3 => imagerotate($image, 180, 0),
+            6 => imagerotate($image, -90, 0),
+            8 => imagerotate($image, 90, 0),
+            default => $image,
+        };
     }
 
     public function destroy(Request $request, Fleet $fleet)
