@@ -360,6 +360,8 @@ export default {
     deletedAt: 'Dihapus',
     restore: 'Pulihkan',
     confirmRestore: 'Pulihkan armada "{plate}"? Pilih cabang tujuan di bawah (bisa berbeda dari cabang asalnya).',
+    changePhoto: 'Ubah Foto',
+    choosePhoto: 'Pilih Foto',
     plateNumber: 'Nomor Polisi',
     fleetType: 'Jenis Armada (mis. Tronton, Tangki)',
     brand: 'Merek',

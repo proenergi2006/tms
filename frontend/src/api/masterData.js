@@ -20,6 +20,12 @@ export const fleetsApi = {
   syncFromSyop: params => api.post('/fleets/sync-syop', null, { params }),
   trashed: params => api.get('/fleets-trashed', { params }),
   restore: (id, data) => api.post(`/fleets/${id}/restore`, data),
+  uploadPhoto: (id, file) => {
+    const form = new FormData()
+    form.append('photo', file)
+
+    return api.post(`/fleets/${id}/photo`, form, { headers: { 'Content-Type': 'multipart/form-data' } })
+  },
 }
 
 export const driversApi = {

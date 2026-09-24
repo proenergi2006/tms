@@ -11,6 +11,7 @@ use App\Modules\Fleet\Services\FleetReliabilityService;
 use App\Modules\MasterData\Models\Branch;
 use App\Modules\SyopIntegration\Services\SyopSyncService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class FleetController extends Controller
 {
@@ -259,6 +260,33 @@ class FleetController extends Controller
         $fleet->update($data);
 
         return new FleetResource($fleet);
+    }
+
+    /**
+     * Foto armada — ditampilkan di kartu daftar & header halaman detail.
+     * Endpoint terpisah dari update() biasa (yang mengirim JSON) supaya
+     * upload multipart tidak perlu mengubah FleetRequest/alur form utama.
+     * Menimpa (bukan menumpuk) foto lama — hanya satu foto per armada.
+     */
+    public function uploadPhoto(Request $request, Fleet $fleet)
+    {
+        if (! $request->user()->canAccessBranch($fleet->branch_id)) {
+            abort(403, 'Anda hanya dapat mengelola armada cabang Anda sendiri.');
+        }
+
+        $request->validate([
+            'photo' => ['required', 'image', 'max:5120'],
+        ]);
+
+        if ($fleet->photo_path) {
+            Storage::disk('public')->delete($fleet->photo_path);
+        }
+
+        $fleet->update([
+            'photo_path' => $request->file('photo')->store('fleets', 'public'),
+        ]);
+
+        return new FleetResource($fleet->fresh('branch'));
     }
 
     public function destroy(Request $request, Fleet $fleet)

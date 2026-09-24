@@ -21,7 +21,7 @@ class Fleet extends Model
         'syop_fleet_id',
         'plate_number', 'fleet_type', 'brand', 'model', 'year',
         'chassis_number', 'engine_number', 'keur_number',
-        'capacity', 'purchase_price', 'ownership', 'leasing_status', 'b3_dishub_number', 'mutation_status',
+        'capacity', 'photo_path', 'purchase_price', 'ownership', 'leasing_status', 'b3_dishub_number', 'mutation_status',
         'branch_id', 'status', 'last_inspection_at',
         'service_interval_km', 'service_interval_engine_hours', 'service_interval_months',
         'last_service_at', 'last_service_odometer', 'last_service_engine_hours',

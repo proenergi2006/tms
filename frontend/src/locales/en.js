@@ -360,6 +360,8 @@ export default {
     deletedAt: 'Deleted',
     restore: 'Restore',
     confirmRestore: 'Restore fleet "{plate}"? Choose a destination branch below (can differ from its original branch).',
+    changePhoto: 'Change Photo',
+    choosePhoto: 'Choose Photo',
     plateNumber: 'Plate Number',
     fleetType: 'Fleet Type (e.g. Tronton, Tanker)',
     brand: 'Brand',

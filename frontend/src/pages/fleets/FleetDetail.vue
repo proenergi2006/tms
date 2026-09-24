@@ -190,6 +190,40 @@
     }
   }
 
+  // -- Foto Armada --
+  const photoDialog = ref(false)
+  const uploadingPhoto = ref(false)
+  const photoFile = ref(null)
+  const photoPreviewUrl = ref(null)
+
+  function openPhotoDialog () {
+    photoFile.value = null
+    photoPreviewUrl.value = null
+    photoDialog.value = true
+  }
+
+  // v-file-input tanpa `multiple` tetap bisa mengirim array berisi satu File
+  // tergantung versi Vuetify — ambil elemen pertama supaya konsisten.
+  function onPhotoSelected (value) {
+    const file = Array.isArray(value) ? value[0] : value
+    photoFile.value = file ?? null
+    // URL.createObjectURL tidak boleh dipanggil langsung di template (bukan
+    // binding setup, bukan whitelist global Vue) — dibungkus di sini lalu
+    // hasilnya disimpan ke ref untuk dipakai <v-img>.
+    photoPreviewUrl.value = file ? URL.createObjectURL(file) : null
+  }
+
+  async function submitPhoto () {
+    uploadingPhoto.value = true
+    try {
+      await fleetsApi.uploadPhoto(fleetId, photoFile.value)
+      photoDialog.value = false
+      await loadFleet()
+    } finally {
+      uploadingPhoto.value = false
+    }
+  }
+
   // -- Hapus Armada --
   const deleteDialog = ref(false)
   const deleting = ref(false)
@@ -359,6 +393,25 @@
         @click="deleteDialog = true"
       >{{ t('common.delete') }}</v-btn>
     </div>
+
+    <v-card class="mb-4">
+      <v-card-text class="d-flex align-center ga-4">
+        <v-img
+          v-if="fleet.photo_url"
+          class="rounded"
+          cover
+          height="120"
+          :src="fleet.photo_url"
+          width="160"
+        />
+
+        <div v-else class="d-flex align-center justify-center bg-grey-lighten-3 rounded" style="height: 120px; width: 160px">
+          <v-icon color="grey" icon="mdi-truck-outline" size="40" />
+        </div>
+
+        <v-btn v-if="canManage" prepend-icon="mdi-camera" variant="tonal" @click="openPhotoDialog">{{ t('fleets.changePhoto') }}</v-btn>
+      </v-card-text>
+    </v-card>
 
     <v-card class="mb-4">
       <v-card-title>{{ t('fleets.vehicleInfo') }}</v-card-title>
@@ -950,6 +1003,44 @@
           <v-spacer />
           <v-btn variant="text" @click="editDialog = false">{{ t('common.cancel') }}</v-btn>
           <v-btn color="primary" :loading="savingFleet" variant="flat" @click="submitEditFleet">{{ t('common.save') }}</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="photoDialog" max-width="420">
+      <v-card>
+        <v-card-title>{{ t('fleets.changePhoto') }}</v-card-title>
+
+        <v-card-text>
+          <v-img
+            v-if="photoPreviewUrl"
+            class="rounded mb-4"
+            cover
+            height="180"
+            :src="photoPreviewUrl"
+          />
+
+          <v-file-input
+            accept="image/*"
+            :label="t('fleets.choosePhoto')"
+            :model-value="photoFile"
+            prepend-icon="mdi-camera"
+            show-size
+            @update:model-value="onPhotoSelected"
+          />
+        </v-card-text>
+
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="photoDialog = false">{{ t('common.cancel') }}</v-btn>
+
+          <v-btn
+            color="primary"
+            :disabled="!photoFile"
+            :loading="uploadingPhoto"
+            variant="flat"
+            @click="submitPhoto"
+          >{{ t('common.save') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>

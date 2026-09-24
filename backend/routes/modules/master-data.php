@@ -52,6 +52,8 @@ Route::post('fleets/sync-syop', [FleetController::class, 'syncFromSyop'])->middl
 Route::get('fleets-trashed', [FleetController::class, 'trashed'])->middleware('permission:master-data.manage');
 Route::post('fleets/{id}/restore', [FleetController::class, 'restore'])->middleware('permission:master-data.manage');
 
+Route::post('fleets/{fleet}/photo', [FleetController::class, 'uploadPhoto'])->middleware('permission:master-data.manage');
+
 Route::apiResource('cost-types', CostTypeController::class)
     ->parameters(['cost-types' => 'costType'])
     ->only(['index', 'show'])
