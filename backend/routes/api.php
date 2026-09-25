@@ -39,6 +39,7 @@ Route::prefix('v1')->group(function () {
         require __DIR__.'/modules/maintenance.php';
         require __DIR__.'/modules/approval.php';
         require __DIR__.'/modules/fleet.php';
+        require __DIR__.'/modules/reports.php';
         require __DIR__.'/modules/asset-registry.php';
         require __DIR__.'/modules/rbac.php';
         require __DIR__.'/modules/users.php';

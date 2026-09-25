@@ -6,6 +6,9 @@ export const approvalsApi = {
   history: params => api.get('/approvals/history', { params }),
   approve: (workOrderId, notes) => api.post(`/work-orders/${workOrderId}/approve`, { notes }),
   reject: (workOrderId, reason) => api.post(`/work-orders/${workOrderId}/reject`, { reason }),
+  // Visibilitas read-only untuk Manajemen/Operational Manager (bukan
+  // approver) — lihat ApprovalController::overview().
+  overview: () => api.get('/approvals/overview'),
 }
 
 // Tahapan Approval (dinamis) — admin_sistem saja (permission

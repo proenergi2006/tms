@@ -17,6 +17,14 @@ Route::middleware('permission:approval.act')->group(function () {
     Route::post('work-orders/{workOrder}/reject', [ApprovalController::class, 'reject']);
 });
 
+// Visibilitas READ-ONLY antrean approval untuk Manajemen/Operational
+// Manager — sengaja permission:report.view (yang sudah mereka punya),
+// BUKAN approval.view, supaya tidak ikut mengaktifkan menu/endpoint
+// approve-reject yang memang bukan untuk role ini.
+Route::middleware('permission:report.view')->group(function () {
+    Route::get('approvals/overview', [ApprovalController::class, 'overview']);
+});
+
 // Manajemen tahap approval (Approval Workflow Engine dinamis) — khusus
 // admin_sistem, lihat RolePermissionSeeder & ApprovalStepController.
 Route::middleware('permission:approval-step.manage')->group(function () {

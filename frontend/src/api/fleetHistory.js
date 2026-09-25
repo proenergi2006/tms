@@ -27,4 +27,8 @@ export const reportsApi = {
   // jadi navigasi browser biasa ke URL ini tidak akan terautentikasi.
   fleetProfitabilityExport: params => api.get('/reports/fleet-profitability/export', { params, responseType: 'blob' }),
   fleetMaintenanceCost: params => api.get('/reports/fleet-maintenance-cost', { params }),
+  branchComparison: params => api.get('/reports/branch-comparison', { params }),
+  companyTrend: params => api.get('/reports/company-trend', { params }),
+  driverIncidents: params => api.get('/reports/driver-incidents', { params }),
+  sparepartSpend: params => api.get('/reports/sparepart-spend', { params }),
 }

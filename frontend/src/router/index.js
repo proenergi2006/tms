@@ -19,6 +19,7 @@ import MasterDataHub from '@/pages/master-data/MasterDataHub.vue'
 import NotificationsList from '@/pages/notifications/NotificationsList.vue'
 import RbacManagement from '@/pages/rbac/RbacManagement.vue'
 import FleetProfitabilityReport from '@/pages/reports/FleetProfitabilityReport.vue'
+import ManagementOverview from '@/pages/reports/ManagementOverview.vue'
 import RequestForm from '@/pages/requests/RequestForm.vue'
 import RequestsList from '@/pages/requests/RequestsList.vue'
 import Sso from '@/pages/Sso.vue'
@@ -67,6 +68,7 @@ const router = createRouter({
         { path: 'master-data', component: MasterDataHub },
         { path: 'assets', component: AssetsList },
         { path: 'reports/fleet-profitability', component: FleetProfitabilityReport },
+        { path: 'reports/management-overview', component: ManagementOverview },
         { path: 'notifications', component: NotificationsList },
         { path: 'audit-logs', component: AuditLogsList },
         { path: 'system-logs', component: SystemLogsList },

@@ -49,6 +49,44 @@ class ApprovalController extends Controller
         return ApprovalLogResource::collection($logs);
     }
 
+    /**
+     * Visibilitas READ-ONLY seluruh antrean approval untuk Manajemen/
+     * Operational Manager — beda dari pending() yang cuma menampilkan WO
+     * yang gilirannya di role user saat ini (Fleet Operations/Kepala Pool).
+     * Manajemen bukan approver (tidak punya approval.act), jadi endpoint ini
+     * sengaja digerbang permission:report.view (yang sudah mereka punya),
+     * BUKAN permission:approval.view, supaya tidak ikut mengaktifkan menu/
+     * endpoint approve-reject yang memang bukan untuk mereka.
+     */
+    public function overview(Request $httpRequest)
+    {
+        $user = $httpRequest->user();
+
+        $workOrders = WorkOrder::with(['request.fleet.branch', 'request.requestedBy.branch', 'approvalStep', 'approvalLogs'])
+            ->where('approval_status', 'submitted')
+            ->latest()
+            ->get()
+            ->filter(fn (WorkOrder $wo) => $user->canAccessBranch($this->branchId($wo)))
+            ->map(function (WorkOrder $wo) {
+                $waitingSince = $wo->approvalLogs->sortByDesc('approved_at')->first()?->approved_at ?? $wo->created_at;
+
+                return [
+                    'id' => $wo->id,
+                    'wo_no' => $wo->wo_no,
+                    'plate_number' => $wo->request->fleet?->plate_number,
+                    'branch' => $wo->request->fleet?->branch?->name ?? $wo->request->requestedBy?->branch?->name,
+                    'approval_step' => $wo->approvalStep?->label,
+                    'requested_by' => $wo->request->requestedBy?->name,
+                    'waiting_since' => $waitingSince,
+                    'waiting_minutes' => abs(now()->diffInMinutes($waitingSince)),
+                ];
+            })
+            ->sortByDesc('waiting_minutes')
+            ->values();
+
+        return response()->json(['data' => $workOrders]);
+    }
+
     public function approve(ApproveWorkOrderRequest $approveRequest, WorkOrder $workOrder, ApprovalWorkflowService $workflowService)
     {
         $workOrder = $workflowService->approve($workOrder, $approveRequest->user(), $approveRequest->validated('notes'));

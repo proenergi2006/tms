@@ -3,6 +3,7 @@
 // Endpoint Riwayat Armada & Laporan — Design Document Bagian 3.5.
 // RBAC — lihat RolePermissionSeeder untuk pemetaan permission ke role.
 
+use App\Modules\Fleet\Http\Controllers\BranchComparisonReportController;
 use App\Modules\Fleet\Http\Controllers\FleetController;
 use App\Modules\Fleet\Http\Controllers\FleetHistoryController;
 use App\Modules\Fleet\Http\Controllers\FleetProfitabilityReportController;
@@ -36,4 +37,6 @@ Route::middleware('permission:report.view')->group(function () {
     Route::get('reports/fleet-profitability', [FleetProfitabilityReportController::class, 'index']);
     Route::get('reports/fleet-profitability/export', [FleetProfitabilityReportController::class, 'export']);
     Route::get('reports/fleet-maintenance-cost', [FleetProfitabilityReportController::class, 'maintenanceCost']);
+    Route::get('reports/branch-comparison', [BranchComparisonReportController::class, 'index']);
+    Route::get('reports/company-trend', [BranchComparisonReportController::class, 'trend']);
 });

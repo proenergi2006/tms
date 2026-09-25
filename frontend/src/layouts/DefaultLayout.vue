@@ -86,6 +86,7 @@
       heading: t('nav.groupReports'),
       items: [
         { title: t('nav.reports'), icon: 'mdi-chart-line', to: '/reports/fleet-profitability', permission: 'report.view' },
+        { title: t('nav.managementOverview'), icon: 'mdi-view-dashboard-outline', to: '/reports/management-overview', permission: 'report.view' },
       ],
     },
     {
