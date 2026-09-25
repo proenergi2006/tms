@@ -34,7 +34,7 @@
   const vendorTypeOptions = computed(() => ['bengkel', 'vendor_lain'].map(value => ({ title: t(`enums.vendorType.${value}`), value })))
   const sparepartCategoryOptions = computed(() => ['ban', 'oli_pelumas', 'aki_kelistrikan', 'rem', 'sparepart_mesin', 'sparepart_body', 'filter', 'lainnya']
     .map(value => ({ title: t(`enums.sparepartCategory.${value}`), value })))
-  const sparepartUnitOptions = computed(() => ['pcs', 'set', 'unit', 'liter', 'box', 'meter']
+  const sparepartUnitOptions = computed(() => ['pcs', 'set', 'unit', 'liter', 'box', 'meter', 'galon', 'pail']
     .map(value => ({ title: t(`enums.sparepartUnit.${value}`), value })))
   const sparepartCriteriaOptions = computed(() => ['very_fast', 'fast', 'medium', 'slow', 'very_slow', 'non']
     .map(value => ({ title: t(`enums.sparepartCriteria.${value}`), value })))
@@ -115,6 +115,7 @@
       api: sparepartsApi,
       columns: [
         { key: 'sku', label: t('masterData.sku') }, { key: 'name', label: t('common.name') },
+        { key: 'part_number', label: t('masterData.partNumber') },
         { key: 'unit_cost', label: t('masterData.unitCost') },
         { key: 'stock_qty', label: t('masterData.stock') }, { key: 'min_stock', label: t('masterData.minStock') },
         { key: 'max_stock', label: t('masterData.maxStock') }, { key: 'safety_stock', label: t('masterData.safetyStock') },

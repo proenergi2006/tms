@@ -140,6 +140,8 @@ export default {
       liter: 'Liter',
       box: 'Box',
       meter: 'Meter',
+      galon: 'Gallon',
+      pail: 'Pail',
     },
     role: {
       sa: 'Service Advisor',
