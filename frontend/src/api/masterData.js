@@ -62,7 +62,26 @@ export const warehousesApi = {
   remove: id => api.delete(`/warehouses/${id}`),
 }
 
+// Ambil SEMUA sparepart (semua halaman) untuk dropdown pilihan. Sebelumnya
+// dropdown memakai list({ per_page: 100 }) sekali saja, sehingga sparepart
+// urutan ke-101 dst (diurutkan nama) diam-diam tidak muncul sama sekali.
+async function listAllSpareparts () {
+  const perPage = 200
+  const items = []
+  let page = 1
+  let lastPage
+  do {
+    const { data } = await api.get('/spareparts', { params: { per_page: perPage, page } })
+    items.push(...data.data)
+    lastPage = data.meta?.last_page ?? 1
+    page++
+  } while (page <= lastPage)
+
+  return items
+}
+
 export const sparepartsApi = {
+  listAll: listAllSpareparts,
   list: params => api.get('/spareparts', { params }),
   create: data => api.post('/spareparts', data),
   update: (id, data) => api.put(`/spareparts/${id}`, data),

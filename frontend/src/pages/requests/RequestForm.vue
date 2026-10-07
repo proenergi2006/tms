@@ -34,6 +34,14 @@
 
   const fleets = ref([])
   const spareparts = ref([])
+
+  // Dropdown sparepart bisa dicari lewat SKU, nama, atau part number.
+  const sparepartTitle = s => `${s.sku} — ${s.name}`
+  function sparepartFilter (value, query, item) {
+    const q = String(query ?? '').toLowerCase()
+    const s = item?.raw
+    return !q || [s?.sku, s?.name, s?.part_number].some(v => String(v ?? '').toLowerCase().includes(q))
+  }
   const mechanics = ref([])
   const vendors = ref([])
 
@@ -208,14 +216,14 @@
   onMounted(async () => {
     loadingForm.value = true
     try {
-      const [fleetsRes, sparepartsRes, mechanicsRes, vendorsRes] = await Promise.all([
+      const [fleetsRes, sparepartList, mechanicsRes, vendorsRes] = await Promise.all([
         fleetsApi.list({ per_page: 100 }),
-        sparepartsApi.list({ per_page: 100 }),
+        sparepartsApi.listAll(),
         mechanicsApi.list({ per_page: 100 }),
         vendorsApi.list({ per_page: 100 }),
       ])
       fleets.value = fleetsRes.data.data
-      spareparts.value = sparepartsRes.data.data
+      spareparts.value = sparepartList
       mechanics.value = mechanicsRes.data.data
       vendors.value = vendorsRes.data.data
 
@@ -464,12 +472,13 @@
           <tbody>
             <tr v-for="(row, index) in form.items" :key="index">
               <td v-if="form.execution_type !== 'eksternal'" style="min-width: 160px;">
-                <v-select
+                <v-autocomplete
                   v-model="row.sparepart_id"
                   clearable
+                  :custom-filter="sparepartFilter"
                   density="compact"
                   hide-details
-                  :item-title="item => `${item.sku} — ${item.name}`"
+                  :item-title="sparepartTitle"
                   item-value="id"
                   :items="spareparts"
                   variant="underlined"

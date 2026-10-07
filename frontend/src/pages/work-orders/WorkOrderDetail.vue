@@ -115,6 +115,14 @@
   const addingItem = ref(false)
   const itemError = ref(null)
   const spareparts = ref([])
+
+  // Dropdown sparepart bisa dicari lewat SKU, nama, atau part number.
+  const sparepartTitle = s => `${s.sku} — ${s.name}`
+  function sparepartFilter (value, query, item) {
+    const q = String(query ?? '').toLowerCase()
+    const s = item?.raw
+    return !q || [s?.sku, s?.name, s?.part_number].some(v => String(v ?? '').toLowerCase().includes(q))
+  }
   const newItem = ref({ sparepart_id: null, description: '', qty: 1, unit_cost: 0 })
 
   function openItemDialog () {
@@ -141,8 +149,7 @@
       await workOrdersApi.addItem(workOrder.value.id, newItem.value)
       itemDialog.value = false
       await load()
-      const { data } = await sparepartsApi.list({ per_page: 100 })
-      spareparts.value = data.data
+      spareparts.value = await sparepartsApi.listAll()
     } catch (error) {
       itemError.value = error.response?.data?.message ?? t('workOrder.addItemFailed')
     } finally {
@@ -295,14 +302,14 @@
 
   onMounted(async () => {
     await load()
-    const [mechRes, vendorRes, sparepartRes] = await Promise.all([
+    const [mechRes, vendorRes, sparepartList] = await Promise.all([
       mechanicsApi.list({ per_page: 100 }),
       vendorsApi.list({ per_page: 100 }),
-      sparepartsApi.list({ per_page: 100 }),
+      sparepartsApi.listAll(),
     ])
     mechanics.value = mechRes.data.data
     vendors.value = vendorRes.data.data
-    spareparts.value = sparepartRes.data.data
+    spareparts.value = sparepartList
   })
 </script>
 
@@ -698,20 +705,21 @@
         <v-card-text>
           <v-alert v-if="itemError" class="mb-4" type="error" variant="tonal">{{ itemError }}</v-alert>
 
-          <v-select
+          <v-autocomplete
             v-if="workOrder.execution_type !== 'eksternal'"
             v-model="newItem.sparepart_id"
             clearable
-            item-title="name"
+            :custom-filter="sparepartFilter"
+            :item-title="sparepartTitle"
             item-value="id"
             :items="spareparts"
             :label="`${t('masterData.tabSpareparts')} ${t('common.optional')}`"
             @update:model-value="onSparepartSelect"
           >
             <template #item="{ props: itemProps, item }">
-              <v-list-item v-bind="itemProps" :subtitle="`${t('masterData.stock')}: ${item.stock_qty}`" />
+              <v-list-item v-bind="itemProps" :subtitle="`${item.raw.sku} · ${t('masterData.stock')}: ${item.raw.stock_qty}`" />
             </template>
-          </v-select>
+          </v-autocomplete>
 
           <v-text-field v-model="newItem.description" :label="t('workOrder.description')" />
           <v-text-field v-model.number="newItem.qty" :label="t('workOrder.qty')" type="number" />
@@ -772,12 +780,13 @@
             <tbody>
               <tr v-for="(row, index) in realizeItems" :key="index">
                 <td v-if="workOrder.execution_type !== 'eksternal'" style="min-width: 160px;">
-                  <v-select
+                  <v-autocomplete
                     v-model="row.sparepart_id"
                     clearable
+                    :custom-filter="sparepartFilter"
                     density="compact"
                     hide-details
-                    item-title="name"
+                    :item-title="sparepartTitle"
                     item-value="id"
                     :items="spareparts"
                     variant="underlined"
