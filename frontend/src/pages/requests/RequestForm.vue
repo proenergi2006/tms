@@ -471,7 +471,7 @@
 
           <tbody>
             <tr v-for="(row, index) in form.items" :key="index">
-              <td v-if="form.execution_type !== 'eksternal'" style="min-width: 160px;">
+              <td v-if="form.execution_type !== 'eksternal'" style="min-width: 280px;">
                 <v-autocomplete
                   v-model="row.sparepart_id"
                   clearable
@@ -483,7 +483,15 @@
                   :items="spareparts"
                   variant="underlined"
                   @update:model-value="value => onItemSparepartSelect(row, value)"
-                />
+                >
+                  <template #item="{ props: itemProps, item }">
+                    <v-list-item v-bind="itemProps" :subtitle="`${t('masterData.stock')}: ${item.raw.stock_qty}`" />
+                  </template>
+
+                  <template #selection="{ item }">
+                    <span class="text-truncate">{{ item.title }}</span>
+                  </template>
+                </v-autocomplete>
               </td>
 
               <td style="min-width: 160px;">

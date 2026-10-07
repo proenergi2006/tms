@@ -719,6 +719,10 @@
             <template #item="{ props: itemProps, item }">
               <v-list-item v-bind="itemProps" :subtitle="`${item.raw.sku} · ${t('masterData.stock')}: ${item.raw.stock_qty}`" />
             </template>
+
+            <template #selection="{ item }">
+              <span class="text-truncate">{{ item.title }}</span>
+            </template>
           </v-autocomplete>
 
           <v-text-field v-model="newItem.description" :label="t('workOrder.description')" />
@@ -779,7 +783,7 @@
 
             <tbody>
               <tr v-for="(row, index) in realizeItems" :key="index">
-                <td v-if="workOrder.execution_type !== 'eksternal'" style="min-width: 160px;">
+                <td v-if="workOrder.execution_type !== 'eksternal'" style="min-width: 280px;">
                   <v-autocomplete
                     v-model="row.sparepart_id"
                     clearable
@@ -791,7 +795,15 @@
                     :items="spareparts"
                     variant="underlined"
                     @update:model-value="value => onRealizeItemSparepartSelect(row, value)"
-                  />
+                  >
+                    <template #item="{ props: itemProps, item }">
+                      <v-list-item v-bind="itemProps" :subtitle="`${t('masterData.stock')}: ${item.raw.stock_qty}`" />
+                    </template>
+
+                    <template #selection="{ item }">
+                      <span class="text-truncate">{{ item.title }}</span>
+                    </template>
+                  </v-autocomplete>
                 </td>
 
                 <td style="min-width: 160px;">
