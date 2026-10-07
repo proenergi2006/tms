@@ -120,7 +120,7 @@
   const sparepartTitle = s => `${s.sku} — ${s.name}`
   function sparepartFilter (value, query, item) {
     const q = String(query ?? '').toLowerCase()
-    const s = item?.raw
+    const s = item?.raw ?? item
     return !q || [s?.sku, s?.name, s?.part_number].some(v => String(v ?? '').toLowerCase().includes(q))
   }
   const newItem = ref({ sparepart_id: null, description: '', qty: 1, unit_cost: 0 })
@@ -717,11 +717,11 @@
             @update:model-value="onSparepartSelect"
           >
             <template #item="{ props: itemProps, item }">
-              <v-list-item v-bind="itemProps" :subtitle="`${item.raw.sku} · ${t('masterData.stock')}: ${item.raw.stock_qty}`" />
+              <v-list-item v-bind="itemProps" :subtitle="`${item.sku} · ${t('masterData.stock')}: ${item.stock_qty}`" />
             </template>
 
             <template #selection="{ item }">
-              <span class="text-truncate">{{ item.title }}</span>
+              <span class="text-truncate">{{ sparepartTitle(item) }}</span>
             </template>
           </v-autocomplete>
 
@@ -797,11 +797,11 @@
                     @update:model-value="value => onRealizeItemSparepartSelect(row, value)"
                   >
                     <template #item="{ props: itemProps, item }">
-                      <v-list-item v-bind="itemProps" :subtitle="`${t('masterData.stock')}: ${item.raw.stock_qty}`" />
+                      <v-list-item v-bind="itemProps" :subtitle="`${t('masterData.stock')}: ${item.stock_qty}`" />
                     </template>
 
                     <template #selection="{ item }">
-                      <span class="text-truncate">{{ item.title }}</span>
+                      <span class="text-truncate">{{ sparepartTitle(item) }}</span>
                     </template>
                   </v-autocomplete>
                 </td>
